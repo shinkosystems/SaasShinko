@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:saas_gestao_financeira/add_income_screen.dart';
 import 'package:saas_gestao_financeira/add_expense_screen.dart';
 import 'package:saas_gestao_financeira/transaction_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+// Mantenha suas chaves Supabase aqui
+const SUPABASE_URL = 'https://rquhueanhjdozuhielag.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxdWh1ZWFuaGpkb3p1aGllbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MjQ2MzMsImV4cCI6MjA2OTMwMDYzM30.kXkdpa6I7KnknyyAvdu1up2DEHyBC1-hy9BaYgKag4k';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: SUPABASE_URL,
+    anonKey: SUPABASE_ANON_KEY,
+  );
+
   runApp(const MyApp());
 }
 
@@ -18,7 +30,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SaaS Gestão Financeira', // Altere o título do app
+      title: 'SaaS Gestão Financeira',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 40, 157, 253),
@@ -27,7 +39,7 @@ class _MyAppState extends State<MyApp> {
       ),
       home: const MyHomePage(
         title: 'Página Inicial - SaaS Gestão Financeira',
-      ), // Altere o título da página inicial
+      ),
     );
   }
 }
@@ -42,36 +54,89 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> _transactions = [
-    Transaction(
-      id: '1',
-      description: 'Salário de Julho',
-      value: 3000.00,
-      date: DateTime.now().subtract(const Duration(days: 5)),
-      type: TransactionType.income,
-    ),
-    Transaction(
-      id: '2',
-      description: 'Aluguel',
-      value: 1200.00,
-      date: DateTime.now().subtract(const Duration(days: 3)),
-      type: TransactionType.expense,
-    ),
-    Transaction(
-      id: '3',
-      description: 'Venda de Item Antigo',
-      value: 250.00,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      type: TransactionType.income,
-    ),
-    Transaction(
-      id: '4',
-      description: 'Supermercado',
-      value: 350.50,
-      date: DateTime.now(),
-      type: TransactionType.expense,
-    ),
-  ];
+  List<Transaction> _transactions = [];
+  bool _isLoading = true;
+
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTransactions(); // Inicia o carregamento das transações ao iniciar a tela
+  }
+
+  // Método para buscar as transações do Supabase
+  Future<void> _fetchTransactions() async {
+    print('>>> _fetchTransactions() iniciado.');
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final List<Map<String, dynamic>> response = await supabase
+          .from('transactions')
+          .select('*')
+          .order('date', ascending: false);
+
+      print('>>> Resposta bruta do Supabase: $response'); // Manter para debug
+
+      setState(() {
+        _transactions = response.map((json) => Transaction.fromJson(json)).toList();
+        _isLoading = false;
+        print('>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
+        print('>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
+        print('>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
+        print('>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
+      });
+    } on PostgrestException catch (e) {
+      print('>>> ERRO Postgrest ao buscar transações: ${e.message}');
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar transações: ${e.message}')),
+      );
+    } catch (error) {
+      print('>>> ERRO geral ao buscar transações: $error');
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar transações: $error')),
+      );
+    }
+    print('>>> _fetchTransactions() finalizado.');
+  }
+
+  double get _currentBalance {
+    final totalIncome = _transactions
+        .where((t) => t.type == TransactionType.income)
+        .fold(0.0, (sum, item) => sum + item.value);
+    final totalExpense = _transactions
+        .where((t) => t.type == TransactionType.expense)
+        .fold(0.0, (sum, item) => sum + item.value);
+    return totalIncome - totalExpense;
+  }
+
+  double get _monthlyIncome {
+    final now = DateTime.now();
+    return _transactions
+        .where((t) =>
+            t.type == TransactionType.income &&
+            t.date.year == now.year &&
+            t.date.month == now.month)
+        .fold(0.0, (sum, item) => sum + item.value);
+  }
+
+  double get _monthlyExpense {
+    final now = DateTime.now();
+    return _transactions
+        .where((t) =>
+            t.type == TransactionType.expense &&
+            t.date.year == now.year &&
+            t.date.month == now.month)
+        .fold(0.0, (sum, item) => sum + item.value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,46 +145,47 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: SingleChildScrollView(
+      body: SingleChildScrollView( // Mantendo o SingleChildScrollView para a página toda
         child: Column(
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Text(
-                "Ações Rápidas",
+                "Visão Geral",
                 style: Theme.of(
                   context,
-                ).textTheme.headlineLarge, // Estilo de texto grande
+                ).textTheme.headlineLarge,
               ),
             ),
+
+            // INÍCIO DA ROW DOS CARDS
             Padding(
-              //Início dos Cards
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
                 vertical: 8.0,
               ),
-              child: Row(
+              child: Row( // Uma única Row para os três cards
                 children: <Widget>[
                   Expanded(
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(8.0), // Padding ajustado para 3 cards
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
                               'Saldo Atual',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14, // Fonte ajustada para 3 cards
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'R\$ 1.500,00',
-                              style: TextStyle(
-                                fontSize: 24,
+                            const SizedBox(height: 4), // Espaçamento ajustado
+                            Text(
+                              'R\$ ${_currentBalance.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 18, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueAccent,
                               ),
@@ -129,27 +195,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16), // Espaço entre os cards
+                  const SizedBox(width: 8), // Espaçamento entre os cards
                   Expanded(
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(8.0), // Padding ajustado
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
-                              'Receitas (Mês)',
+                              'Receitas', // Texto mais curto
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'R\$ 2.000,00',
-                              style: TextStyle(
-                                fontSize: 24,
+                            const SizedBox(height: 4), // Espaçamento ajustado
+                            Text(
+                              'R\$ ${_monthlyIncome.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 18, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
                               ),
@@ -159,37 +225,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Padding(
-              //Início card #2
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
+                  const SizedBox(width: 8), // Espaçamento entre os cards
+                  Expanded( // Terceiro card na mesma Row
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(8.0), // Padding ajustado
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
-                              'Despesas (Mês)',
+                              'Despesas', // Texto mais curto
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'R\$ 500,00',
-                              style: TextStyle(
-                                fontSize: 24,
+                            const SizedBox(height: 4), // Espaçamento ajustado
+                            Text(
+                              'R\$ ${_monthlyExpense.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 18, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
                                 color: Colors.redAccent,
                               ),
@@ -201,23 +257,27 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-            ), //Final dos cards
+            ),
+            // FIM DA ROW DOS CARDS
+
+            // INÍCIO DA ROW DOS BOTÕES RECEITA E DESPESA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: <Widget>[
                   Expanded(
                     child: ElevatedButton(
-                      // <--- BOTÃO ADICIONAR RECEITAS
                       onPressed: () {
+                        print('Navegando para AddIncomeScreen...');
                         Navigator.push(
-                          // <--- Começamos a navegação aqui!
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const AddIncomeScreen(), // <--- Vai para a nova tela
+                            builder: (context) => const AddIncomeScreen(),
                           ),
-                        );
+                        ).then((_) {
+                          print('Retornou de AddIncomeScreen. Chamando _fetchTransactions()...');
+                          _fetchTransactions();
+                        });
                       },
                       child: const Text('Adicionar Receita'),
                     ),
@@ -225,32 +285,39 @@ class _MyHomePageState extends State<MyHomePage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: OutlinedButton(
-                      // <--- BOTÃO ADICIONAR DESPESA
                       onPressed: () {
+                        print('Navegando para AddExpenseScreen...');
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const AddExpenseScreen(), // <--- Vai para a nova tela
+                            builder: (context) => const AddExpenseScreen(),
                           ),
-                        );
+                        ).then((_) {
+                          print('Retornou de AddExpenseScreen. Chamando _fetchTransactions()...');
+                          _fetchTransactions();
+                        });
                       },
                       child: const Text('Adicionar Despesa'),
-                    ),
+                  ),
                   ),
                 ],
               ),
             ),
+            // FIM DA ROW DOS BOTÕES RECEITA E DESPESA
+
+            // INÍCIO DO BOTÃO VER RELATÓRIO
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: TextButton(
-                // <--- BOTÃO VER RELATÓRIOS
                 onPressed: () {
                   print('Ver Relatórios Clicando!');
                 },
                 child: const Text('Ver Relatórios'),
               ),
             ),
+            // FIM DO BOTÃO VER RELATÓRIO
+
+            // INÍCIO DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Text(
@@ -258,59 +325,72 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
-            // Aqui virá a lista de transações
-            // Usaremos um ListView.builder dentro de um Expanded ou SizedBox para dar limite de altura
-            SizedBox(
-              // Usamos SizedBox para dar uma altura fixa para a lista no momento
-              height:
-                  300, // Ajuste a altura conforme necessário para ver os itens
-              child: ListView.builder(
-                itemCount: _transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = _transactions[index];
-                  return Card(
-                    // Para cada transação, um Card simples por enquanto
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 8.0,
-                      horizontal: 16.0,
-                    ),
-                    child: ListTile(
-                      leading: Icon(
-                        transaction.type == TransactionType.income
-                            ? Icons
-                                  .arrow_upward // Ícone para receita
-                            : Icons.arrow_downward, // Ícone para despesa
-                        color: transaction.type == TransactionType.income
-                            ? Colors
-                                  .green // Cor verde para receita
-                            : Colors.red, // Cor vermelha para despesa
-                      ),
-                      title: Text(transaction.description),
-                      subtitle: Text(
-                        '${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
-                      ),
-                      trailing: Text(
-                        'R\$ ${transaction.value.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: transaction.type == TransactionType.income
-                              ? Colors.green
-                              : Colors.red,
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _transactions.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Nenhuma transação encontrada. Adicione uma nova!',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      )
+                    : SizedBox(
+                        height: 100, // AJUSTE DE ALTURA DA LISTA DE TRANSAÇÕES
+                        child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _transactions.length,
+                          itemBuilder: (context, index) {
+                            final transaction = _transactions[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                elevation: 2,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                  leading: CircleAvatar(
+                                    backgroundColor: transaction.type == TransactionType.income
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
+                                    child: Icon(
+                                      transaction.type == TransactionType.income
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                      color: transaction.type == TransactionType.income
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    transaction.description,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}',
+                                  ),
+                                  trailing: Text(
+                                    'R\$ ${transaction.value.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: transaction.type == TransactionType.income
+                                        ? Colors.green
+                                        : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ), // Se quiser adicionar mais coisas, adicione aqui dentro da Column
           ],
         ),
-      ), // <--- Fechamento CORRETO do SingleChildScrollView
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print('Botão Flutuante Clicando!'); // Nova ação para o FAB
+          print('Botão Flutuante Clicando!');
         },
-        tooltip: 'Nova Transação', // Novo tooltip
+        tooltip: 'Nova Transação',
         child: const Icon(Icons.add),
       ),
     );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:saas_gestao_financeira/financial_form_widget.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:saas_gestao_financeira/transaction_model.dart';
 
 class AddIncomeScreen extends StatefulWidget {
   const AddIncomeScreen({super.key});
@@ -9,16 +11,52 @@ class AddIncomeScreen extends StatefulWidget {
 }
 
 class _AddIncomeScreenState extends State<AddIncomeScreen> {
-  // Vamos criar TextControllers para pegar o valor dos campos de texto
-  final TextEditingController _valueController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final SupabaseClient supabase = Supabase.instance.client;
+  bool _isSaving = false;
 
   @override
   void dispose() {
-    // É importante descartar os controllers quando o widget não for mais usado
-    _valueController.dispose();
-    _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveIncome(double value, String description) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final transactionData = Transaction(
+        id: '', // Supabase irá gerar o ID automaticamente
+        description: description,
+        value: value,
+        date: DateTime.now(),
+        type: TransactionType.income,
+      ).toJson();
+
+      await supabase.from('transactions').insert(transactionData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Receita salva com sucesso!')),
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } on PostgrestException catch (e) {
+      print('Erro ao salvar receita no Supabase: ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar receita: ${e.message}')),
+      );
+    } catch (e) {
+      print('Erro inesperado ao salvar receita: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado ao salvar receita.')),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   @override
@@ -28,22 +66,16 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         title: const Text('Adicionar Receita'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: FinancialFormWidget(
-        // Use o novo widget aqui!
-        formTitle: 'Insira os detalhes da Receita',
-        buttonText: 'Salvar Receita',
-        titleStyle: Theme.of(context).textTheme.headlineLarge!,
-        onSave: (value, description) {
-          // Este callback será chamado quando o botão Salvar for pressionado e a validação passar
-          print(
-            'Receita salva (via callback)! Valor: R\$ ${value.toStringAsFixed(2)}, Descrição: $description',
-          );
-          // Aqui no futuro, você enviará para o Supabase
-          Navigator.pop(
-            context, //PORQUE CONTEXT
-          ); // Opcional: Voltar para a tela anterior após salvar
-        },
-      ),
+      body: _isSaving
+          ? const Center(child: CircularProgressIndicator())
+          : FinancialFormWidget(
+              formTitle: 'Insira os detalhes da Receita',
+              buttonText: 'Salvar Receita',
+              titleStyle: Theme.of(context).textTheme.headlineLarge!,
+              onSave: (value, description) {
+                _saveIncome(value, description);
+              },
+            ),
     );
   }
 }

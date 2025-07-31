@@ -6,7 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Mantenha suas chaves Supabase aqui
 const SUPABASE_URL = 'https://rquhueanhjdozuhielag.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxdWh1ZWFuaGpkb3p1aGllbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MjQ2MzMsImV4cCI6MjA2OTMwMDYzM30.kXkdpa6I7KnknyyAvdu1up2DEHyBC1-hy9BaYgKag4k';
+const SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxdWh1ZWFuaGpkb3p1aGllbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MjQ2MzMsImV4cCI6MjA2OTMwMDYzM30.kXkdpa6I7KnknyyAvdu1up2DEHyBC1-hy9BaYgKag4k';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,12 +34,12 @@ class _MyAppState extends State<MyApp> {
       title: 'SaaS Gestão Financeira',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 40, 157, 253),
+          seedColor: const Color.fromARGB(255, 248, 165, 70),
         ),
         useMaterial3: true,
       ),
       home: const MyHomePage(
-        title: 'Página Inicial - SaaS Gestão Financeira',
+        title: 'Shinkō - Gestão Financeira',
       ),
     );
   }
@@ -56,6 +57,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Transaction> _transactions = [];
   bool _isLoading = true;
+  bool _areNumbersVisible = true;
 
   final SupabaseClient supabase = Supabase.instance.client;
 
@@ -81,12 +83,17 @@ class _MyHomePageState extends State<MyHomePage> {
       print('>>> Resposta bruta do Supabase: $response'); // Manter para debug
 
       setState(() {
-        _transactions = response.map((json) => Transaction.fromJson(json)).toList();
+        _transactions =
+            response.map((json) => Transaction.fromJson(json)).toList();
         _isLoading = false;
-        print('>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
-        print('>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
-        print('>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
-        print('>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
+        print(
+            '>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
+        print(
+            '>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
+        print(
+            '>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
+        print(
+            '>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
       });
     } on PostgrestException catch (e) {
       print('>>> ERRO Postgrest ao buscar transações: ${e.message}');
@@ -143,9 +150,71 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+
+        //LOGO DA APPBAR
+        leading: Padding(
+          // Adiciona um padding para a logo
+          padding: const EdgeInsets.only(
+              left: 16.0), // Ajuste o padding conforme necessário
+
+          child: Image.asset(
+            'assets/logo.png',
+            fit: BoxFit.contain,
+            height: 40,
+            width: 80,
+          ),
+        ),
+        // FIM DA LOGO DA APP BAR
+
         title: Text(widget.title),
+        toolbarHeight: 80.0, // <-- AUMENTE A ALTURA AQUI (ex: 100.0 ou mais)
+        titleSpacing: 16.0,
+
+        // ÍCONES DA APP BAR
+        actions: [
+          IconButton(
+            icon: Icon(
+              _areNumbersVisible
+                  ? Icons.visibility
+                  : Icons.visibility_off, // <-- Ícone dinâmico
+              size: 30.0,
+            ),
+            onPressed: () {
+              setState(() {
+                // <-- Altera o estado ao pressionar
+                _areNumbersVisible = !_areNumbersVisible; // Inverte o valor
+              });
+              // Outra ação ao pressionar o botão de visibilidade dos números.
+            },
+            tooltip: _areNumbersVisible
+                ? 'Ocultar Valores'
+                : 'Mostrar Valores', // <-- Tooltip dinâmico
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.notifications,
+              size: 30.0,
+            ), // Ícone de notificações
+            onPressed: () {
+              // Ação ao pressionar o ícone de notificações
+            },
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.settings,
+              size: 30.0,
+            ), // Ícone de configurações
+            onPressed: () {
+              // Ação ao pressionar o ícone de configurações
+            },
+          ),
+          // Você pode adicionar mais IconButtons aqui
+        ],
       ),
-      body: SingleChildScrollView( // Mantendo o SingleChildScrollView para a página toda
+      // FIM DA APP BAR
+
+      body: SingleChildScrollView(
+        // Mantendo o SingleChildScrollView para a página toda
         child: Column(
           children: <Widget>[
             Padding(
@@ -164,13 +233,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 horizontal: 16.0,
                 vertical: 8.0,
               ),
-              child: Row( // Uma única Row para os três cards
+              child: Row(
+                // Uma única Row para os três cards
                 children: <Widget>[
                   Expanded(
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0), // Padding ajustado para 3 cards
+                        padding: const EdgeInsets.all(
+                            8.0), // Padding ajustado para 3 cards
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -226,7 +297,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   const SizedBox(width: 8), // Espaçamento entre os cards
-                  Expanded( // Terceiro card na mesma Row
+                  Expanded(
+                    // Terceiro card na mesma Row
                     child: Card(
                       elevation: 4,
                       child: Padding(
@@ -275,7 +347,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             builder: (context) => const AddIncomeScreen(),
                           ),
                         ).then((_) {
-                          print('Retornou de AddIncomeScreen. Chamando _fetchTransactions()...');
+                          print(
+                              'Retornou de AddIncomeScreen. Chamando _fetchTransactions()...');
                           _fetchTransactions();
                         });
                       },
@@ -293,12 +366,13 @@ class _MyHomePageState extends State<MyHomePage> {
                             builder: (context) => const AddExpenseScreen(),
                           ),
                         ).then((_) {
-                          print('Retornou de AddExpenseScreen. Chamando _fetchTransactions()...');
+                          print(
+                              'Retornou de AddExpenseScreen. Chamando _fetchTransactions()...');
                           _fetchTransactions();
                         });
                       },
                       child: const Text('Adicionar Despesa'),
-                  ),
+                    ),
                   ),
                 ],
               ),
@@ -334,55 +408,60 @@ class _MyHomePageState extends State<MyHomePage> {
                           style: TextStyle(fontSize: 18),
                         ),
                       )
-                    : SizedBox(
-                        height: 100, // AJUSTE DE ALTURA DA LISTA DE TRANSAÇÕES
-                        child: ListView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _transactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction = _transactions[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Card(
-                                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                elevation: 2,
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                  leading: CircleAvatar(
-                                    backgroundColor: transaction.type == TransactionType.income
-                                        ? Colors.green.shade100
-                                        : Colors.red.shade100,
-                                    child: Icon(
+                    : ListView.builder(
+                        // Sem SizedBox e com shrinkWrap: true
+                        shrinkWrap: true,
+                        itemCount: _transactions.length,
+                        itemBuilder: (context, index) {
+                          final transaction = _transactions[index];
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8.0),
+                              elevation: 2,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                leading: CircleAvatar(
+                                  backgroundColor:
                                       transaction.type == TransactionType.income
-                                          ? Icons.arrow_upward
-                                          : Icons.arrow_downward,
-                                      color: transaction.type == TransactionType.income
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    transaction.description,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Text(
-                                    '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}',
-                                  ),
-                                  trailing: Text(
-                                    'R\$ ${transaction.value.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: transaction.type == TransactionType.income
+                                          ? Colors.green.shade100
+                                          : Colors.red.shade100,
+                                  child: Icon(
+                                    transaction.type == TransactionType.income
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    color: transaction.type ==
+                                            TransactionType.income
                                         ? Colors.green
                                         : Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  transaction.description,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text(
+                                  '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}',
+                                ),
+                                trailing: Text(
+                                  'R\$ ${transaction.value.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color: transaction.type ==
+                                            TransactionType.income
+                                        ? Colors.green
+                                        : Colors.red,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
+            // FIM DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
           ],
         ),
       ),

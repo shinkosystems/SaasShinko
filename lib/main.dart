@@ -3,6 +3,8 @@ import 'package:saas_gestao_financeira/add_income_screen.dart';
 import 'package:saas_gestao_financeira/add_expense_screen.dart';
 import 'package:saas_gestao_financeira/transaction_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:saas_gestao_financeira/transaction_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 // Mantenha suas chaves Supabase aqui
 const SUPABASE_URL = 'https://rquhueanhjdozuhielag.supabase.co';
@@ -145,6 +147,52 @@ class _MyHomePageState extends State<MyHomePage> {
         .fold(0.0, (sum, item) => sum + item.value);
   }
 
+  // FUNÇÃO PARA EXCLUIR TRANSAÇÕES CADASTRADAS
+  Future<void> _deleteTransactionFromList(String transactionId) async {
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Exclusão'),
+          content: const Text('Tem certeza que deseja excluir esta transação?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      try {
+        print('>>> Tentando excluir transação com ID: $transactionId');
+        final response = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', transactionId); // Usa o ID da transação passada
+
+        print('>>> Resposta do Supabase após delete: $response');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transação excluída com sucesso!')),
+        );
+        _fetchTransactions(); // Recarrega a lista após a exclusão
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir transação: $error')),
+        );
+        print('Erro de exclusão Supabase (direto da lista): $error');
+      }
+    }
+  }
+  //FIM DA FUNÇÃO PARA EXCLUIR TRANSAÇÕES CADASTRADAS
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,20 +211,16 @@ class _MyHomePageState extends State<MyHomePage> {
             height: 40,
             width: 80,
           ),
-        ),
-        // FIM DA LOGO DA APP BAR
-
+        ), // <-- FIM DA LOGO DA APP BAR
         title: Text(widget.title),
-        toolbarHeight: 80.0, // <-- AUMENTE A ALTURA AQUI (ex: 100.0 ou mais)
+        toolbarHeight: 80.0, // <-- LOCAL P/ ALTERAR ALTURA DA APP BAR
         titleSpacing: 16.0,
 
         // ÍCONES DA APP BAR
         actions: [
           IconButton(
             icon: Icon(
-              _areNumbersVisible
-                  ? Icons.visibility
-                  : Icons.visibility_off, // <-- Ícone dinâmico
+              _areNumbersVisible ? Icons.visibility : Icons.visibility_off,
               size: 30.0,
             ),
             onPressed: () {
@@ -194,7 +238,7 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: const Icon(
               Icons.notifications,
               size: 30.0,
-            ), // Ícone de notificações
+            ),
             onPressed: () {
               // Ação ao pressionar o ícone de notificações
             },
@@ -203,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: const Icon(
               Icons.settings,
               size: 30.0,
-            ), // Ícone de configurações
+            ),
             onPressed: () {
               // Ação ao pressionar o ícone de configurações
             },
@@ -234,7 +278,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 vertical: 8.0,
               ),
               child: Row(
-                // Uma única Row para os três cards
                 children: <Widget>[
                   Expanded(
                     child: Card(
@@ -254,7 +297,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             const SizedBox(height: 4), // Espaçamento ajustado
                             Text(
-                              'R\$ ${_currentBalance.toStringAsFixed(2)}',
+                              _areNumbersVisible
+                                  ? 'R\$ ${_currentBalance.toStringAsFixed(2)}' // Exibe o valor
+                                  : '*****', // Oculta o valor
                               style: const TextStyle(
                                 fontSize: 18, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
@@ -271,22 +316,24 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0), // Padding ajustado
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
-                              'Receitas', // Texto mais curto
+                              'Receitas',
                               style: TextStyle(
-                                fontSize: 14, // Fonte ajustada
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 4), // Espaçamento ajustado
+                            const SizedBox(height: 4),
                             Text(
-                              'R\$ ${_monthlyIncome.toStringAsFixed(2)}',
+                              _areNumbersVisible
+                                  ? 'R\$ ${_monthlyIncome.toStringAsFixed(2)}' // Exibe o valor
+                                  : '*****', // Oculta o valor
                               style: const TextStyle(
-                                fontSize: 18, // Fonte ajustada
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
                               ),
@@ -298,7 +345,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   const SizedBox(width: 8), // Espaçamento entre os cards
                   Expanded(
-                    // Terceiro card na mesma Row
                     child: Card(
                       elevation: 4,
                       child: Padding(
@@ -315,7 +361,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             const SizedBox(height: 4), // Espaçamento ajustado
                             Text(
-                              'R\$ ${_monthlyExpense.toStringAsFixed(2)}',
+                              _areNumbersVisible
+                                  ? 'R\$ ${_monthlyExpense.toStringAsFixed(2)}' // Exibe o valor
+                                  : '*****', // Oculta o valor,
                               style: const TextStyle(
                                 fontSize: 18, // Fonte ajustada
                                 fontWeight: FontWeight.bold,
@@ -332,7 +380,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             // FIM DA ROW DOS CARDS
 
-            // INÍCIO DA ROW DOS BOTÕES RECEITA E DESPESA
+            // INÍCIO DA ROW DOS BOTÕES ADICIONAR RECEITA E DESPESA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -377,7 +425,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             ),
-            // FIM DA ROW DOS BOTÕES RECEITA E DESPESA
+            // FIM DA ROW DOS BOTÕES ADICIONAR RECEITA E DESPESA
 
             // INÍCIO DO BOTÃO VER RELATÓRIO
             Padding(
@@ -409,8 +457,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       )
                     : ListView.builder(
-                        // Sem SizedBox e com shrinkWrap: true
-                        shrinkWrap: true,
+                        shrinkWrap: true, // <--- Adicionado
+                        physics:
+                            const NeverScrollableScrollPhysics(), // <--- Adicionado
                         itemCount: _transactions.length,
                         itemBuilder: (context, index) {
                           final transaction = _transactions[index];
@@ -444,17 +493,55 @@ class _MyHomePageState extends State<MyHomePage> {
                                       fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}',
+                                  DateFormat('dd/MM/yyyy')
+                                      .format(transaction.date),
                                 ),
-                                trailing: Text(
-                                  'R\$ ${transaction.value.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    color: transaction.type ==
-                                            TransactionType.income
-                                        ? Colors.green
-                                        : Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      // Visibilidade de números (seu código já tem isso)
+                                      _areNumbersVisible
+                                          ? 'R\$ ${transaction.value.toStringAsFixed(2)}'
+                                          : 'R\$ *****.**',
+                                      style: TextStyle(
+                                        color: transaction.type ==
+                                                TransactionType.income
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 32.0),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, size: 20.0),
+                                      color: Colors.grey[600],
+                                      onPressed: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                TransactionDetailScreen(
+                                                    transaction: transaction),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          _fetchTransactions();
+                                        }
+                                      },
+                                      tooltip: 'Editar Transação',
+                                    ),
+                                    IconButton(
+                                      icon:
+                                          const Icon(Icons.delete, size: 20.0),
+                                      color: Colors.red[400],
+                                      onPressed: () {
+                                        _deleteTransactionFromList(
+                                            transaction.id);
+                                      },
+                                      tooltip: 'Excluir Transação',
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

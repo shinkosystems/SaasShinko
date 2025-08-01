@@ -5,6 +5,10 @@ import 'package:saas_gestao_financeira/transaction_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:saas_gestao_financeira/transaction_detail_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:saas_gestao_financeira/user_page.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:saas_gestao_financeira/pdf_report_generator.dart';
 
 // Mantenha suas chaves Supabase aqui
 const SUPABASE_URL = 'https://rquhueanhjdozuhielag.supabase.co';
@@ -36,12 +40,12 @@ class _MyAppState extends State<MyApp> {
       title: 'SaaS Gestão Financeira',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 248, 165, 70),
+          seedColor: const Color.fromARGB(255, 172, 224, 207),
         ),
         useMaterial3: true,
       ),
       home: const MyHomePage(
-        title: 'Shinkō - Gestão Financeira',
+        title: 'Shinko - Gestão Financeira',
       ),
     );
   }
@@ -66,8 +70,29 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _checkAssetExistence(); // <--- Chamada para a função de depuração da logo
     _fetchTransactions(); // Inicia o carregamento das transações ao iniciar a tela
   }
+
+  // MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
+  Future<void> _checkAssetExistence() async {
+    try {
+      // Tenta carregar o asset diretamente pelo AssetBundle
+      await DefaultAssetBundle.of(context)
+          .load('assets/logocerta.png'); // <--- Use o nome exato aqui!
+      print(
+          '>>> DEBUG: Asset "assets/logocerta.png" parece estar carregável pelo AssetBundle.');
+    } on FlutterError catch (e) {
+      print(
+          '>>> DEBUG: ERRO Flutter ao carregar asset "assets/logocerta.png" pelo AssetBundle: $e');
+      print(
+          '>>> DEBUG: Verifique se o nome do arquivo está EXATO (case-sensitive) e se o pubspec.yaml está correto na seção assets.');
+    } catch (e) {
+      print(
+          '>>> DEBUG: ERRO geral ao verificar asset "assets/logocerta.png": $e');
+    }
+  }
+  // FIM DO MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
 
   // Método para buscar as transações do Supabase
   Future<void> _fetchTransactions() async {
@@ -127,23 +152,17 @@ class _MyHomePageState extends State<MyHomePage> {
     return totalIncome - totalExpense;
   }
 
+  // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS RECEITAS
   double get _monthlyIncome {
-    final now = DateTime.now();
     return _transactions
-        .where((t) =>
-            t.type == TransactionType.income &&
-            t.date.year == now.year &&
-            t.date.month == now.month)
+        .where((t) => t.type == TransactionType.income)
         .fold(0.0, (sum, item) => sum + item.value);
   }
 
+  // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS DESPESAS
   double get _monthlyExpense {
-    final now = DateTime.now();
     return _transactions
-        .where((t) =>
-            t.type == TransactionType.expense &&
-            t.date.year == now.year &&
-            t.date.month == now.month)
+        .where((t) => t.type == TransactionType.expense)
         .fold(0.0, (sum, item) => sum + item.value);
   }
 
@@ -198,24 +217,22 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
-        //LOGO DA APPBAR
-        leading: Padding(
-          // Adiciona um padding para a logo
-          padding: const EdgeInsets.only(
-              left: 16.0), // Ajuste o padding conforme necessário
-
-          child: Image.asset(
-            'assets/logo.png',
-            fit: BoxFit.contain,
-            height: 40,
-            width: 80,
+        toolbarHeight: 80.0, // Mantenha ou ajuste a altura total da AppBar
+        title: Center(
+          // Centraliza o conteúdo da Row
+          child: Row(
+            mainAxisAlignment:
+                MainAxisAlignment.center, // Centraliza os itens dentro da Row
+            children: [
+              Image.asset(
+                'assets/logocerta.png',
+                height: 250,
+                width: 300,
+                fit: BoxFit.contain,
+              ),
+            ],
           ),
-        ), // <-- FIM DA LOGO DA APP BAR
-        title: Text(widget.title),
-        toolbarHeight: 80.0, // <-- LOCAL P/ ALTERAR ALTURA DA APP BAR
-        titleSpacing: 16.0,
-
+        ),
         // ÍCONES DA APP BAR
         actions: [
           IconButton(
@@ -225,40 +242,79 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             onPressed: () {
               setState(() {
-                // <-- Altera o estado ao pressionar
                 _areNumbersVisible = !_areNumbersVisible; // Inverte o valor
               });
-              // Outra ação ao pressionar o botão de visibilidade dos números.
             },
-            tooltip: _areNumbersVisible
-                ? 'Ocultar Valores'
-                : 'Mostrar Valores', // <-- Tooltip dinâmico
+            tooltip: _areNumbersVisible ? 'Ocultar Valores' : 'Mostrar Valores',
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.notifications,
-              size: 30.0,
-            ),
-            onPressed: () {
-              // Ação ao pressionar o ícone de notificações
-            },
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.settings,
-              size: 30.0,
-            ),
-            onPressed: () {
-              // Ação ao pressionar o ícone de configurações
-            },
-          ),
-          // Você pode adicionar mais IconButtons aqui
+          // Local para mais ícones
         ],
       ),
       // FIM DA APP BAR
 
+      // INÍCIO DO DRAWER - MENU LATERAL
+      drawer: Drawer(
+        child: Column( // Use Column para empilhar o cabeçalho, a lista de itens e o item fixo de logout
+          children: <Widget>[
+            // Cabeçalho do Drawer (DrawerHeader)
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 172, 224, 207), // Cor de fundo do cabeçalho
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  'Menu',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 0, 0, 0), // Cor do texto no cabeçalho
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            // Área expansível para os itens do menu (Página do Usuário, etc.)
+      Expanded(
+        child: ListView(
+          padding: EdgeInsets.zero, // Mantenha isso para evitar padding extra no ListView
+          children: <Widget>[
+            // Item: Página do Usuário
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Página do Usuário'),
+              onTap: () {
+                Navigator.pop(context);               
+                Navigator.push(
+                  context,
+                MaterialPageRoute(builder: (context) => const UserPage()),
+                );
+                // Exemplo de navegação:
+                // Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen()));
+              },
+            ),
+          ],
+        ),
+      ),
+      // INÍCIO DO ÍCONE DE LOGOUT
+      const Divider(),
+      ListTile(
+        leading: const Icon(Icons.logout),
+        title: const Text('Sair'),
+        onTap: () {
+          Navigator.pop(context);
+          // *** Lógica para logout ***
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lógica de Logout a ser implementada!')),
+          );
+        },
+      ),
+      const SizedBox(height: 8.0),
+    ],
+  ),
+),
+      // FIM DO DRAWER - MENU LATERAL
+
       body: SingleChildScrollView(
-        // Mantendo o SingleChildScrollView para a página toda
         child: Column(
           children: <Widget>[
             Padding(
@@ -430,11 +486,67 @@ class _MyHomePageState extends State<MyHomePage> {
             // INÍCIO DO BOTÃO VER RELATÓRIO
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
-              child: TextButton(
-                onPressed: () {
+              child: ElevatedButton(
+                onPressed: () async {
                   print('Ver Relatórios Clicando!');
+                  if (_transactions.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text(
+                              'Não há transações para gerar o relatório.')),
+                    );
+                    return;
+                  }
+                  try {
+                    // Gera o PDF
+                    final pdfBytes =
+                        await PdfReportGenerator.generateTransactionReport(
+                            _transactions);
+
+                    // Abre o visualizador de PDF (ou a opção de compartilhar/imprimir)
+                    await Printing.layoutPdf(
+                        onLayout: (PdfPageFormat format) async => pdfBytes);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Relatório PDF gerado com sucesso!')),
+                    );
+                  } catch (e) {
+                    print('ERRO ao gerar/visualizar PDF: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Erro ao gerar relatório PDF: $e')),
+                    );
+                  }
                 },
-                child: const Text('Ver Relatórios'),
+                style: ElevatedButton.styleFrom(
+                  // Cores do botão
+                  backgroundColor: const Color(
+                      0xFF025928), // Cor de fundo do botão (ex: roxo)
+                  foregroundColor: Colors
+                      .white, // Cor do texto e ícones do botão (ex: branco)
+
+                  // Opcional: Ajuste de padding ou tamanho mínimo
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 30, vertical: 15), // Padding interno
+                  minimumSize:
+                      const Size(200, 50), // Tamanho mínimo (largura, altura)
+
+                  // Opcional: Bordas arredondadas
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(40), // Bordas arredondadas
+                  ),
+                  // Opcional: Elevação da sombra
+                  elevation: 5,
+                ),
+                child: const Text(
+                  'Ver Relatórios',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          FontWeight.bold), // <--- Opcional: Estilo do texto
+                ),
               ),
             ),
             // FIM DO BOTÃO VER RELATÓRIO
@@ -457,9 +569,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       )
                     : ListView.builder(
-                        shrinkWrap: true, // <--- Adicionado
+                        shrinkWrap: true,
                         physics:
-                            const NeverScrollableScrollPhysics(), // <--- Adicionado
+                            const NeverScrollableScrollPhysics(),
                         itemCount: _transactions.length,
                         itemBuilder: (context, index) {
                           final transaction = _transactions[index];
@@ -551,13 +663,6 @@ class _MyHomePageState extends State<MyHomePage> {
             // FIM DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          print('Botão Flutuante Clicando!');
-        },
-        tooltip: 'Nova Transação',
-        child: const Icon(Icons.add),
       ),
     );
   }

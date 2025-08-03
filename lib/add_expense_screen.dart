@@ -25,6 +25,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     });
 
     try {
+      // 1. Obter o ID do usuário logado
+      final User? user = supabase.auth.currentUser;
+      if (user == null) {
+        print('Nenhum usuário logado. Não é possível salvar a despesa.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro: Usuário não logado.')),
+          );
+          Navigator.pop(context); // Volta se não houver usuário logado
+        }
+        return;
+      }
+
       final transactionData = Transaction(
         id: '', // Supabase irá gerar o ID automaticamente
         description: description,
@@ -33,29 +46,37 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         type: TransactionType.expense,
       ).toJson();
 
+      // 2. Adicionar o user_id ao transactionData
+      transactionData['user_id'] = user.id;
+
       await supabase.from('transactions').insert(transactionData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Despesa salva com sucesso!')),
-      );
-
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Despesa salva com sucesso!')),
+        );
         Navigator.pop(context);
       }
     } on PostgrestException catch (e) {
       print('Erro ao salvar despesa no Supabase: ${e.message}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar despesa: ${e.message}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar despesa: ${e.message}')),
+        );
+      }
     } catch (e) {
       print('Erro inesperado ao salvar despesa: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado ao salvar despesa.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro inesperado ao salvar despesa.')),
+        );
+      }
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 

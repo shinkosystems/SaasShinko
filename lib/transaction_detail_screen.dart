@@ -18,16 +18,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   final _formKey = GlobalKey<FormState>();
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Controladores para os campos de texto e variáveis para os dropdowns/datas
   late TextEditingController _descriptionController;
   late TextEditingController _valueController;
-  late TransactionType _selectedType; // Use o enum TransactionType
+  late TransactionType _selectedType;
   late DateTime _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    // Inicializa os controladores e variáveis com os dados da transação que foi passada
     _descriptionController =
         TextEditingController(text: widget.transaction.description);
     _valueController = TextEditingController(
@@ -47,31 +45,60 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Future<void> _updateTransaction() async {
     if (_formKey.currentState!.validate()) {
       try {
+        final User? user = supabase.auth.currentUser;
+        if (user == null) {
+          print('Nenhum usuário logado. Não é possível atualizar a transação.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Erro: Usuário não logado.')),
+            );
+            Navigator.pop(context, false); // Volta sem recarregar a lista
+          }
+          return;
+        }
+
         await supabase
             .from('transactions') // Nome da sua tabela no Supabase
             .update({
-          'description': _descriptionController.text,
-          'value': double.parse(_valueController.text
-              .replaceAll(',', '.')), // Substitui vírgula por ponto para parse
-          'type':
-              _selectedType.toString().split('.').last, // 'income' ou 'expense'
-          'date':
-              _selectedDate.toIso8601String(), // Formato ISO 8601 para Supabase
-        }).eq(
+              'description': _descriptionController.text,
+              'value': double.parse(_valueController.text.replaceAll(
+                  ',', '.')), // Substitui vírgula por ponto para parse
+              'type': _selectedType
+                  .toString()
+                  .split('.')
+                  .last, // 'income' ou 'expense'
+              'date': _selectedDate
+                  .toIso8601String(), // Formato ISO 8601 para Supabase
+            })
+            .eq(
                 'id',
-                widget.transaction
-                    .id); // Condição: atualiza onde o ID corresponde
+                widget
+                    .transaction.id) // Condição: atualiza onde o ID corresponde
+            .eq('user_id',
+                user.id); // ADICIONADO: Garante que só o owner pode atualizar
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transação atualizada com sucesso!')),
-        );
-        Navigator.pop(context,
-            true); // Retorna e sinaliza que a lista deve ser recarregada
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transação atualizada com sucesso!')),
+          );
+          Navigator.pop(context,
+              true); // Retorna e sinaliza que a lista deve ser recarregada
+        }
+      } on PostgrestException catch (e) {
+        print('Erro ao atualizar transação no Supabase: ${e.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Erro ao atualizar transação: ${e.message}')),
+          );
+        }
       } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar transação: $error')),
-        );
-        print('Erro de atualização Supabase: $error'); // Para depuração
+        print('Erro inesperado ao atualizar transação: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro inesperado ao atualizar transação.')),
+          );
+        }
       }
     }
   }
@@ -79,7 +106,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   // Função para excluir a transação do Supabase
   Future<void> _deleteTransaction() async {
     final bool? confirm = await showDialog(
-      // Pergunta ao usuário se ele realmente quer excluir
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -87,11 +113,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           content: const Text('Tem certeza que deseja excluir esta transação?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false), // Cancela
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancelar'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true), // Confirma
+              onPressed: () => Navigator.of(context).pop(true),
               child: const Text('Excluir'),
             ),
           ],
@@ -100,26 +126,48 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
 
     if (confirm == true) {
-      // Se o usuário confirmou
       try {
+        final User? user = supabase.auth.currentUser;
+        if (user == null) {
+          print('Nenhum usuário logado. Não é possível excluir a transação.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Erro: Usuário não logado.')),
+            );
+            Navigator.pop(context, false);
+          }
+          return;
+        }
+
         await supabase
             .from('transactions') // Nome da sua tabela no Supabase
             .delete()
-            .eq(
-                'id',
-                widget
-                    .transaction.id); // Condição: exclui onde o ID corresponde
+            .eq('id',
+                widget.transaction.id) // Condição: exclui onde o ID corresponde
+            .eq('user_id',
+                user.id); // ADICIONADO: Garante que só o owner pode excluir
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transação excluída com sucesso!')),
-        );
-        Navigator.pop(context,
-            true); // Retorna e sinaliza que a lista deve ser recarregada
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transação excluída com sucesso!')),
+          );
+          Navigator.pop(context,
+              true); // Retorna e sinaliza que a lista deve ser recarregada
+        }
+      } on PostgrestException catch (e) {
+        print('Erro ao excluir transação no Supabase: ${e.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao excluir transação: ${e.message}')),
+          );
+        }
       } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir transação: $error')),
-        );
-        print('Erro de exclusão Supabase: $error'); // Para depuração
+        print('Erro inesperado ao excluir transação: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro inesperado ao excluir transação.')),
+          );
+        }
       }
     }
   }
@@ -139,7 +187,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        // Permite rolar a tela se o conteúdo for grande
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey, // Chave para validar o formulário
@@ -148,7 +195,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             children: [
               TextFormField(
                 controller: _valueController,
-                keyboardType: TextInputType.numberWithOptions(
+                keyboardType: const TextInputType.numberWithOptions(
                     decimal: true), // Teclado numérico com suporte a decimais
                 decoration: const InputDecoration(
                   labelText: 'Valor',
@@ -160,7 +207,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     return 'Por favor, insira um valor.';
                   }
                   if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                    // Valida com ponto ou vírgula
                     return 'Por favor, insira um número válido.';
                   }
                   return null;
@@ -181,9 +227,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16), // Espaçamento
+              const SizedBox(height: 16),
               DropdownButtonFormField<TransactionType>(
-                // Dropdown para selecionar o tipo (Receita/Despesa)
                 value: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo',
@@ -215,17 +260,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                // Widget para selecionar a data
                 title: const Text('Data da Transação'),
-                subtitle: Text(DateFormat('dd/MM/yyyy')
-                    .format(_selectedDate)), // Mostra a data formatada
+                subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final DateTime? picked = await showDatePicker(
                     context: context,
                     initialDate: _selectedDate,
-                    firstDate: DateTime(2000), // Data mínima
-                    lastDate: DateTime(2101), // Data máxima
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
                   );
                   if (picked != null && picked != _selectedDate) {
                     setState(() {
@@ -236,10 +279,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               ),
               const SizedBox(height: 24),
               Center(
-                // Botão para salvar as alterações
                 child: ElevatedButton(
-                  onPressed:
-                      _updateTransaction, // Chama a função de atualização
+                  onPressed: _updateTransaction,
                   child: const Text('Salvar Alterações'),
                 ),
               ),

@@ -25,6 +25,19 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     });
 
     try {
+      // 1. Obter o ID do usuário logado
+      final User? user = supabase.auth.currentUser;
+      if (user == null) {
+        print('Nenhum usuário logado. Não é possível salvar a receita.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro: Usuário não logado.')),
+          );
+          Navigator.pop(context); // Volta se não houver usuário logado
+        }
+        return;
+      }
+
       final transactionData = Transaction(
         id: '', // Supabase irá gerar o ID automaticamente
         description: description,
@@ -33,29 +46,37 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         type: TransactionType.income,
       ).toJson();
 
+      // 2. Adicionar o user_id ao transactionData
+      transactionData['user_id'] = user.id;
+
       await supabase.from('transactions').insert(transactionData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Receita salva com sucesso!')),
-      );
-
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receita salva com sucesso!')),
+        );
         Navigator.pop(context);
       }
     } on PostgrestException catch (e) {
       print('Erro ao salvar receita no Supabase: ${e.message}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar receita: ${e.message}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar receita: ${e.message}')),
+        );
+      }
     } catch (e) {
       print('Erro inesperado ao salvar receita: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado ao salvar receita.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro inesperado ao salvar receita.')),
+        );
+      }
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 

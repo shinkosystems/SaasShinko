@@ -1,5 +1,3 @@
-//modificação teste.
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -18,13 +16,13 @@ class UserPage extends StatefulWidget {
 
 class _UserPageState extends State<UserPage> {
   // Variáveis de estado
-  String _userName = 'Carregando...'; // Texto inicial para carregamento
-  String _userEmail = 'Carregando...'; // Texto inicial para carregamento
+  String _userName = 'Carregando...';
+  String _userEmail = 'Carregando...';
   File? _profileImage;
-  String? _avatarUrl; // Para armazenar o URL da imagem do Supabase Storage
+  String? _avatarUrl;
 
-  bool _isLoading = true; // Para gerenciar o estado de carregamento inicial
-  String? _userId; // ID do usuário logado
+  bool _isLoading = true;
+  String? _userId;
 
   // Variável para controlar se o perfil já foi carregado para evitar chamadas múltiplas
   bool _profileLoaded = false;
@@ -32,50 +30,36 @@ class _UserPageState extends State<UserPage> {
   @override
   void initState() {
     super.initState();
-    // Agendamos _getProfile para ser chamado após o primeiro frame de construção.
-    // Isso garante que o BuildContext esteja completamente disponível para ScaffoldMessenger.
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _getProfile();
     });
   }
 
-  // didChangeDependencies não é mais necessário para a chamada inicial do perfil.
-  // Pode ser removido ou usado para outras dependências se houver.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Se você tiver outras lógicas que dependem de InheritedWidgets e precisam
-    // ser reexecutadas quando as dependências mudam, coloque-as aqui.
-    // Para _getProfile, removemos a chamada daqui para evitar múltiplas execuções.
   }
 
-
-  // Função para buscar os dados do perfil do Supabase
   Future<void> _getProfile() async {
-    // Evita chamar a função se o perfil já foi carregado
     if (_profileLoaded) return;
 
     setState(() {
-      _isLoading = true; // Inicia o estado de carregamento
+      _isLoading = true;
     });
 
     try {
-      // Obter o ID do usuário logado
       _userId = supabase.auth.currentUser?.id;
 
       if (_userId == null) {
-        // Se não há usuário logado, mostrar erro ou redirecionar
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Nenhum usuário logado. Por favor, faça login.')),
+            const SnackBar(
+                content: Text('Nenhum usuário logado. Por favor, faça login.')),
           );
-          // Opcional: Redirecionar para tela de login
-          // await Future.delayed(const Duration(seconds: 2)); // Pequeno atraso para o SnackBar ser visível
-          // if (mounted) Navigator.of(context).pushReplacementNamed('/login');
         }
         setState(() {
-          _isLoading = false; // Finaliza o carregamento
-          _profileLoaded = true; // Marca como carregado mesmo com erro de usuário
+          _isLoading = false;
+          _profileLoaded = true;
           _userName = 'Usuário não logado';
           _userEmail = '';
         });
@@ -85,35 +69,29 @@ class _UserPageState extends State<UserPage> {
       // Buscar os dados do perfil na tabela 'profiles'
       final response = await supabase
           .from('profiles')
-          .select('username, email, avatar_url') // Seleciona as colunas desejadas
-          .eq('id', _userId!) // Filtra pelo ID do usuário
-          .single(); // Espera um único resultado
+          .select('username, email, avatar_url')
+          .eq('id', _userId!)
+          .single();
 
       if (mounted) {
         setState(() {
           _userName = response['username'] as String? ?? 'Nome não definido';
           _userEmail = response['email'] as String? ?? 'Email não definido';
-          _avatarUrl = response['avatar_url'] as String?; // Pega o URL da imagem
+          _avatarUrl =
+              response['avatar_url'] as String?; // Pega o URL da imagem
 
           _isLoading = false; // Finaliza o carregamento
           _profileLoaded = true; // Marca que o perfil foi carregado
         });
       }
-
-      // Se houver um avatar_url, tenta carregar a imagem (seja do local ou do Supabase)
-      if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
-        // Não é necessário chamar _loadImageFromSupabase para NetworkImage,
-        // pois NetworkImage lida com o carregamento da URL diretamente no `build`.
-        // Apenas para garantir que o _avatarUrl seja o que estamos mostrando,
-        // mas ele já está sendo usado.
-      }
-
     } on PostgrestException catch (e) {
       if (mounted) {
-        if (e.code == 'PGRST116') { // Código comum para "no rows found" (nenhuma linha encontrada)
+        if (e.code == 'PGRST116') {
+          // Código comum para "no rows found" (nenhuma linha encontrada)
           setState(() {
             _userName = 'Perfil novo';
-            _userEmail = supabase.auth.currentUser?.email ?? 'Email não definido';
+            _userEmail =
+                supabase.auth.currentUser?.email ?? 'Email não definido';
             _isLoading = false;
             _profileLoaded = true;
           });
@@ -150,7 +128,9 @@ class _UserPageState extends State<UserPage> {
   // Função para selecionar e fazer upload da imagem de perfil
   Future<void> _pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70); // Reduzir qualidade para uploads mais rápidos
+    final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70); // Reduzir qualidade para uploads mais rápidos
 
     if (image == null) return;
 
@@ -159,7 +139,9 @@ class _UserPageState extends State<UserPage> {
     if (_userId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nenhum usuário logado para fazer upload de imagem.')),
+          const SnackBar(
+              content:
+                  Text('Nenhum usuário logado para fazer upload de imagem.')),
         );
       }
       return;
@@ -167,8 +149,10 @@ class _UserPageState extends State<UserPage> {
 
     final File imageFile = File(image.path);
     final String fileExtension = image.path.split('.').last;
-    final String fileName = '${_userId!}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-    final String storagePath = 'avatars/$fileName'; // 'avatars' é o bucket no Supabase Storage
+    final String fileName =
+        '${_userId!}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+    final String storagePath =
+        'avatars/$fileName'; // 'avatars' é o bucket no Supabase Storage
 
     setState(() {
       _isLoading = true; // Mostra carregamento ao fazer upload
@@ -177,24 +161,28 @@ class _UserPageState extends State<UserPage> {
     try {
       // Faça o upload da imagem para o Supabase Storage
       await supabase.storage.from('avatars').upload(
-        storagePath,
-        imageFile,
-        fileOptions: const FileOptions(
-          cacheControl: '3600', // Cache por 1 hora
-          upsert: true, // Se já existir um arquivo com o mesmo nome, substitui
-        ),
-      );
+            storagePath,
+            imageFile,
+            fileOptions: const FileOptions(
+              cacheControl: '3600', // Cache por 1 hora
+              upsert:
+                  true, // Se já existir um arquivo com o mesmo nome, substitui
+            ),
+          );
 
       // Atualize o URL do avatar na tabela 'profiles'
       await supabase.from('profiles').update({
-        'avatar_url': storagePath, // Salve o caminho no storage, não o public URL completo
+        'avatar_url':
+            storagePath, // Salve o caminho no storage, não o public URL completo
         'updated_at': DateTime.now().toIso8601String(), // Atualiza o timestamp
       }).eq('id', _userId!);
 
       if (mounted) {
         setState(() {
-          _profileImage = imageFile; // Atualiza a imagem local (opcional, pois NetworkImage será usado)
-          _avatarUrl = storagePath; // Atualiza o URL local para que o NetworkImage possa carregar
+          _profileImage =
+              imageFile; // Atualiza a imagem local (opcional, pois NetworkImage será usado)
+          _avatarUrl =
+              storagePath; // Atualiza o URL local para que o NetworkImage possa carregar
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -206,14 +194,18 @@ class _UserPageState extends State<UserPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao fazer upload da foto: ${e.message}')),
         );
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro inesperado ao atualizar foto: $e')),
         );
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -225,13 +217,17 @@ class _UserPageState extends State<UserPage> {
       if (userEmail == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('E-mail do usuário não encontrado para redefinição de senha.')),
+            const SnackBar(
+                content: Text(
+                    'E-mail do usuário não encontrado para redefinição de senha.')),
           );
         }
         return;
       }
 
-      setState(() { _isLoading = true; }); // Opcional: mostrar carregamento durante esta operação
+      setState(() {
+        _isLoading = true;
+      }); // Opcional: mostrar carregamento durante esta operação
 
       await supabase.auth.resetPasswordForEmail(
         userEmail,
@@ -243,23 +239,34 @@ class _UserPageState extends State<UserPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Link de redefinição de senha enviado para seu e-mail! Verifique sua caixa de entrada.')),
+              content: Text(
+                  'Link de redefinição de senha enviado para seu e-mail! Verifique sua caixa de entrada.')),
         );
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
-    } on AuthException catch (e) { // Use AuthException para erros de autenticação do Supabase
+    } on AuthException catch (e) {
+      // Use AuthException para erros de autenticação do Supabase
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao solicitar redefinição de senha: ${e.message}')),
+          SnackBar(
+              content:
+                  Text('Erro ao solicitar redefinição de senha: ${e.message}')),
         );
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro inesperado ao solicitar redefinição: $e')),
+          SnackBar(
+              content: Text('Erro inesperado ao solicitar redefinição: $e')),
         );
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -273,7 +280,9 @@ class _UserPageState extends State<UserPage> {
         toolbarHeight: 80.0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Mostra um indicador de carregamento
+          ? const Center(
+              child:
+                  CircularProgressIndicator()) // Mostra um indicador de carregamento
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Center(
@@ -283,15 +292,31 @@ class _UserPageState extends State<UserPage> {
                   children: [
                     // Foto de Perfil
                     GestureDetector(
-                      onTap: _pickAndUploadImage, // Chama a nova função de upload
+                      onTap:
+                          _pickAndUploadImage, // Chama a nova função de upload
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[200],
                         // Usa NetworkImage se _avatarUrl existir, FileImage se _profileImage existir localmente, senão null
-                        backgroundImage: _avatarUrl != null && _avatarUrl!.isNotEmpty
-                            ? NetworkImage(supabase.storage.from('avatars').getPublicUrl(_avatarUrl!)) as ImageProvider<Object>?
-                            : (_profileImage != null ? FileImage(_profileImage!) as ImageProvider<Object>? : null),
-                        child: (_avatarUrl == null || _avatarUrl!.isEmpty) && _profileImage == null
+                        backgroundImage:
+                            _avatarUrl != null && _avatarUrl!.isNotEmpty
+                                ? (() {
+                                    // --- INÍCIO DA ADIÇÃO DO PRINT DE DEBUG ---
+                                    final imageUrl = supabase.storage
+                                        .from('avatars')
+                                        .getPublicUrl(_avatarUrl!);
+                                    print(
+                                        'DEBUG: Tentando carregar imagem da URL: $imageUrl');
+                                    // --- FIM DA ADIÇÃO DO PRINT DE DEBUG ---
+                                    return NetworkImage(imageUrl)
+                                        as ImageProvider<Object>?;
+                                  })()
+                                : (_profileImage != null
+                                    ? FileImage(_profileImage!)
+                                        as ImageProvider<Object>?
+                                    : null),
+                        child: (_avatarUrl == null || _avatarUrl!.isEmpty) &&
+                                _profileImage == null
                             ? Icon(
                                 Icons.camera_alt,
                                 size: 40,
@@ -329,7 +354,8 @@ class _UserPageState extends State<UserPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF025928),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -337,11 +363,6 @@ class _UserPageState extends State<UserPage> {
                     ),
 
                     const SizedBox(height: 20),
-                    const Text(
-                      'Ainda mais funcionalidades em breve!',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
                   ],
                 ),
               ),

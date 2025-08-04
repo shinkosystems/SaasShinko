@@ -161,49 +161,50 @@ class _UserPageState extends State<UserPage> {
       return;
     }
 
-    final File imageFile = File(image.path);
-    final String fileExtension = image.path.split('.').last;
-    final String fileName =
-        '${_userId!}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-    final String storagePath =
-        'avatars/$fileName'; // 'avatars' é o bucket no Supabase Storage
+      final bytes = await image.readAsBytes();
+  // -----------------------
 
-    setState(() {
-      _isLoading = true; // Mostra carregamento ao fazer upload
-    });
+  final String fileExtension = image.name.split('.').last;
+  final String fileName =
+      '${_userId!}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+  final String storagePath =
+      'avatars/$fileName'; // 'avatars' é o bucket no Supabase Storage
 
-    print('DEBUG: Tentando fazer upload para o path: $storagePath'); // DEBUG
+  setState(() {
+    _isLoading = true; // Mostra carregamento ao fazer upload
+  });
 
-    try {
-      await supabase.storage.from('avatars').upload(
-            storagePath,
-            imageFile,
-            fileOptions: const FileOptions(
-              cacheControl: '3600', // Cache por 1 hora
-              upsert:
-                  true, // Se já existir um arquivo com o mesmo nome, substitui
-            ),
-          );
+  print('DEBUG: Tentando fazer upload para o path: $storagePath'); // DEBUG
 
-      await supabase.from('profiles').update({
-        'avatar_url':
-            storagePath, // Salve o caminho no storage, não o public URL completo
-        'updated_at': DateTime.now().toIso8601String(), // Atualiza o timestamp
-      }).eq('id', _userId!);
-
-      if (mounted) {
-        setState(() {
-          _profileImage =
-              imageFile;
-          _avatarUrl =
-              storagePath;
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto de perfil atualizada!')),
+  try {
+    await supabase.storage.from('avatars').uploadBinary(
+          storagePath,
+          bytes, // Use os bytes do arquivo aqui
+          fileOptions: const FileOptions(
+            cacheControl: '3600', // Cache por 1 hora
+            upsert:
+                true, // Se já existir um arquivo com o mesmo nome, substitui
+          ),
         );
-        print('DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl'); // DEBUG
-      }
+
+    await supabase.from('profiles').update({
+      'avatar_url':
+          storagePath, // Salve o caminho no storage, não o public URL completo
+      'updated_at': DateTime.now().toIso8601String(), // Atualiza o timestamp
+    }).eq('id', _userId!);
+
+    if (mounted) {
+      setState(() {
+        _profileImage = null; // Limpe a imagem local para carregar da URL
+        _avatarUrl =
+            storagePath;
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto de perfil atualizada!')),
+      );
+      print('DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl'); // DEBUG
+    }
     } on StorageException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -23,8 +23,7 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   bool _areNumbersVisible = true;
 
-  DateTime _startDate = DateTime(
-      DateTime.now().year, DateTime.now().month, 1);
+  DateTime _startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _endDate = DateTime.now();
 
   final SupabaseClient supabase = Supabase.instance.client;
@@ -40,12 +39,16 @@ class _HomePageState extends State<HomePage> {
   Future<void> _checkAssetExistence() async {
     try {
       await DefaultAssetBundle.of(context).load('assets/logocerta.png');
-      print('>>> DEBUG: Asset "assets/logocerta.png" parece estar carregável pelo AssetBundle.');
+      print(
+          '>>> DEBUG: Asset "assets/logocerta.png" parece estar carregável pelo AssetBundle.');
     } on FlutterError catch (e) {
-      print('>>> DEBUG: ERRO Flutter ao carregar asset "assets/logocerta.png" pelo AssetBundle: $e');
-      print('>>> DEBUG: Verifique se o nome do arquivo está EXATO (case-sensitive) e se o pubspec.yaml está correto na seção assets.');
+      print(
+          '>>> DEBUG: ERRO Flutter ao carregar asset "assets/logocerta.png" pelo AssetBundle: $e');
+      print(
+          '>>> DEBUG: Verifique se o nome do arquivo está EXATO (case-sensitive) e se o pubspec.yaml está correto na seção assets.');
     } catch (e) {
-      print('>>> DEBUG: ERRO geral ao verificar asset "assets/logocerta.png": $e');
+      print(
+          '>>> DEBUG: ERRO geral ao verificar asset "assets/logocerta.png": $e');
     }
   }
 
@@ -60,7 +63,8 @@ class _HomePageState extends State<HomePage> {
       confirmText: 'Confirmar',
       saveText: 'Salvar',
     );
-    if (picked != null && picked != DateTimeRange(start: _startDate, end: _endDate)) {
+    if (picked != null &&
+        picked != DateTimeRange(start: _startDate, end: _endDate)) {
       setState(() {
         _startDate = picked.start;
         _endDate = picked.end;
@@ -72,7 +76,8 @@ class _HomePageState extends State<HomePage> {
   Future<void> _fetchTransactions() async {
     print('>>> _fetchTransactions() iniciado.');
     if (!mounted) {
-      print('>>> _fetchTransactions(): Widget não está montado, abortando setState().');
+      print(
+          '>>> _fetchTransactions(): Widget não está montado, abortando setState().');
       return;
     }
     setState(() {
@@ -104,12 +109,17 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
-          _transactions = response.map((json) => Transaction.fromJson(json)).toList();
+          _transactions =
+              response.map((json) => Transaction.fromJson(json)).toList();
           _isLoading = false;
-          print('>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
-          print('>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
-          print('>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
-          print('>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
+          print(
+              '>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
+          print(
+              '>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
+          print(
+              '>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
+          print(
+              '>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
         });
       }
     } on PostgrestException catch (e) {
@@ -294,7 +304,8 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const UserPage()),
+                        MaterialPageRoute(
+                            builder: (context) => const UserPage()),
                       );
                     },
                   ),
@@ -317,6 +328,7 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
+            // Título "Visão Geral" e o seletor de datas
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Column(
@@ -325,29 +337,28 @@ class _HomePageState extends State<HomePage> {
                     "Visão Geral",
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
+                  // Seletor de datas: aqui está a única ocorrência, no lugar certo!
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextButton(
+                      onPressed: () => _selectDateRange(context),
+                      child: Text(
+                        'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            
-            // INÍCIO DO SELETOR DE DATAS (CORRIGIDO)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: TextButton(
-                onPressed: () => _selectDateRange(context),
-                child: Text(
-                  'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ),
-            // FIM DO SELETOR DE DATAS (CORRIGIDO)
-            const SizedBox(height: 16),
-            
-            // INÍCIO DA ROW DOS CARDS
+            const SizedBox(
+                height: 16), // Espaçamento entre o seletor e os cards
+
+            // Cards de Saldo, Receitas e Despesas
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -359,8 +370,7 @@ class _HomePageState extends State<HomePage> {
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(
-                            8.0),
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -454,9 +464,8 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // FIM DA ROW DOS CARDS
 
-            // INÍCIO DA ROW DOS BOTÕES ADICIONAR RECEITA E DESPESA
+            // Botões "Adicionar Receita" e "Adicionar Despesa"
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -501,9 +510,8 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // FIM DA ROW DOS BOTÕES ADICIONAR RECEITA E DESPESA
 
-            // INÍCIO DO BOTÃO VER RELATÓRIO
+            // Botão "Ver Relatórios"
             Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: ElevatedButton(
@@ -530,8 +538,7 @@ class _HomePageState extends State<HomePage> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content:
-                                Text('Relatório PDF gerado com sucesso!')),
+                            content: Text('Relatório PDF gerado com sucesso!')),
                       );
                     }
                   } catch (e) {
@@ -547,28 +554,22 @@ class _HomePageState extends State<HomePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF025928),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 30, vertical: 15),
-                  minimumSize:
-                      const Size(200, 50),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  minimumSize: const Size(200, 50),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(40),
+                    borderRadius: BorderRadius.circular(40),
                   ),
                   elevation: 5,
                 ),
                 child: const Text(
                   'Ver Relatórios',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                          FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            // FIM DO BOTÃO VER RELATÓRIO
-            
-            // INÍCIO DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
+
+            // Título "Últimas Transações"
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Text(
@@ -576,6 +577,8 @@ class _HomePageState extends State<HomePage> {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
+
+            // Lista de transações (condicional)
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _transactions.isEmpty
@@ -592,7 +595,8 @@ class _HomePageState extends State<HomePage> {
                         itemBuilder: (context, index) {
                           final transaction = _transactions[index];
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Card(
                               margin: const EdgeInsets.symmetric(vertical: 8.0),
                               elevation: 2,
@@ -640,8 +644,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 32.0),
                                     IconButton(
-                                      icon:
-                                          const Icon(Icons.edit, size: 20.0),
+                                      icon: const Icon(Icons.edit, size: 20.0),
                                       color: Colors.grey[600],
                                       onPressed: () async {
                                         final result = await Navigator.push(
@@ -659,8 +662,8 @@ class _HomePageState extends State<HomePage> {
                                       tooltip: 'Editar Transação',
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          size: 20.0),
+                                      icon:
+                                          const Icon(Icons.delete, size: 20.0),
                                       color: Colors.red[400],
                                       onPressed: () {
                                         _deleteTransactionFromList(
@@ -675,7 +678,6 @@ class _HomePageState extends State<HomePage> {
                           );
                         },
                       ),
-            // FIM DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
           ],
         ),
       ),

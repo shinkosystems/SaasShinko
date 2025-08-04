@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Define a versão do Flutter que você quer usar (OPCIONAL: se quiser uma versão muito específica)
-# FLUTTER_VERSION="3.22.4" # Removendo esta linha ou comentando para focar no canal stable
-
 # Define o canal do Flutter
 FLUTTER_CHANNEL="stable"
 
@@ -24,11 +21,6 @@ fi
 # Fazer checkout do branch desejado
 git checkout $FLUTTER_CHANNEL
 git pull
-
-# Se você REALMENTE precisa da versão exata 3.22.4, use git reset --hard <tag_ou_commit_hash>
-# Mas para a maioria dos casos, o branch stable já é suficiente para web builds.
-# Exemplo para uma tag:
-# git reset --hard v$FLUTTER_VERSION # Usaria "v3.22.4" se FLUTTER_VERSION="3.22.4"
 
 # Adicionar o Flutter ao PATH para a sessão atual
 export PATH="$PATH:$FLUTTER_HOME/bin"

@@ -385,7 +385,7 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               _areNumbersVisible
                                   ? 'R\$ ${_currentBalance.toStringAsFixed(2)}'
-                                  : '***',
+                                  : '*****',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -417,7 +417,7 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               _areNumbersVisible
                                   ? 'R\$ ${_monthlyIncome.toStringAsFixed(2)}'
-                                  : '***',
+                                  : '*****',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -449,7 +449,7 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               _areNumbersVisible
                                   ? 'R\$ ${_monthlyExpense.toStringAsFixed(2)}'
-                                  : '***',
+                                  : '*****',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -633,7 +633,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                       _areNumbersVisible
                                           ? 'R\$ ${transaction.value.toStringAsFixed(2)}'
-                                          : 'R\$ **.*',
+                                          : 'R\$ *****.**',
                                       style: TextStyle(
                                         color: transaction.type ==
                                                 TransactionType.income

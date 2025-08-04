@@ -1,1 +1,21 @@
-{}
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "pubspec.yaml",
+      "use": "@vercel/static-build",
+      "config": {
+        "outputDirectory": "build/web"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/.*",
+      "dest": "build/web/index.html"
+    }
+  ],
+  "installCommand": "flutter pub get",
+  "buildCommand": "flutter build web --release",
+  "framework": "flutter"
+}

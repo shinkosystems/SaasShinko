@@ -1,14 +1,5 @@
 {
-  "builds": [
-    {
-      "src": "**/pubspec.yaml",
-      "use": "@n4b/vercel-flutter",
-      "config": {
-        "flutterVersion": "3.22.0"
-      }
-    }
-  ],
-  "installCommand": "flutter doctor",
-  "buildCommand": "flutter build web --web-renderer html --no-sound-null-safety --release",
+  "installCommand": "git clone https://github.com/flutter/flutter.git --depth 1 -b 3.22.0 && export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter doctor",
+  "buildCommand": "export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter build web --web-renderer html --no-sound-null-safety --release",
   "outputDirectory": "build/web"
 }

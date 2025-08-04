@@ -1,5 +1,5 @@
 {
   "installCommand": "git clone https://github.com/flutter/flutter.git --depth 1 -b 3.22.0 && export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter doctor",
-  "buildCommand": "export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter build web --web-renderer html --no-sound-null-safety --release",
+  "buildCommand": "export PATH=\"$PATH:$(pwd)/flutter/bin\" && flutter build web --web-renderer html --release",
   "outputDirectory": "build/web"
 }

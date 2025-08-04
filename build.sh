@@ -11,7 +11,7 @@ mkdir -p "$FLUTTER_HOME"
 cd "$FLUTTER_HOME"
 
 if [ ! -d ".git" ]; then
-  git clone https://github.com/flutter/flutter.git .
+  git clone https://github.com/flutter/flutter.git .
 fi
 
 git checkout $FLUTTER_CHANNEL
@@ -30,5 +30,8 @@ echo "--- Running pub get ---"
 cd /vercel/path0 # Volta para a raiz do seu projeto
 flutter pub get
 
-echo "--- Running Flutter Web build ---"
-flutter build web --release
+echo "--- Running Flutter Web build with Environment Variables ---"
+
+flutter build web --release \
+  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"

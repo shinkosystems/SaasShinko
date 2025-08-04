@@ -5,5 +5,8 @@
       "src": "/.*",
       "dest": "build/web/index.html"
     }
-  ]
+  ],
+  "installCommand": "bash ./install_flutter.sh && flutter pub get",
+  "buildCommand": "flutter build web --release",
+  "framework": "flutter"
 }

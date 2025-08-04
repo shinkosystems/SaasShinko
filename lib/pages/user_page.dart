@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/scheduler.dart'; // Import necessário para SchedulerBinding
+import 'package:flutter/scheduler.dart';
 
-// Acesse o cliente Supabase globalmente (ou passe-o via construtor/Provider)
 final supabase = Supabase.instance.client;
 
 class UserPage extends StatefulWidget {
@@ -24,8 +23,15 @@ class _UserPageState extends State<UserPage> {
   bool _isLoading = true;
   String? _userId;
 
-  // Variável para controlar se o perfil já foi carregado para evitar chamadas múltiplas
   bool _profileLoaded = false;
+
+  // Controladores para os campos de troca de senha
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmNewPasswordController = TextEditingController();
+
+  // Chave para o formulário de senha (se você quiser validação de formulário)
+  final GlobalKey<FormState> _passwordFormKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -38,6 +44,14 @@ class _UserPageState extends State<UserPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmNewPasswordController.dispose();
+    super.dispose();
   }
 
   Future<void> _getProfile() async {
@@ -77,21 +91,17 @@ class _UserPageState extends State<UserPage> {
         setState(() {
           _userName = response['username'] as String? ?? 'Nome não definido';
           _userEmail = response['email'] as String? ?? 'Email não definido';
-          _avatarUrl =
-              response['avatar_url'] as String?; // Pega o URL da imagem
-
-          _isLoading = false; // Finaliza o carregamento
-          _profileLoaded = true; // Marca que o perfil foi carregado
+          _avatarUrl = response['avatar_url'] as String?;
+          _isLoading = false;
+          _profileLoaded = true;
         });
       }
     } on PostgrestException catch (e) {
       if (mounted) {
         if (e.code == 'PGRST116') {
-          // Código comum para "no rows found" (nenhuma linha encontrada)
           setState(() {
             _userName = 'Perfil novo';
-            _userEmail =
-                supabase.auth.currentUser?.email ?? 'Email não definido';
+            _userEmail = supabase.auth.currentUser?.email ?? 'Email não definido';
             _isLoading = false;
             _profileLoaded = true;
           });
@@ -130,7 +140,7 @@ class _UserPageState extends State<UserPage> {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70); // Reduzir qualidade para uploads mais rápidos
+        imageQuality: 70);
 
     if (image == null) return;
 
@@ -210,65 +220,125 @@ class _UserPageState extends State<UserPage> {
     }
   }
 
-  // Função para lidar com a troca de senha (usando Supabase Auth)
-  void _changePassword() async {
-    try {
-      final userEmail = supabase.auth.currentUser?.email;
-      if (userEmail == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'E-mail do usuário não encontrado para redefinição de senha.')),
-          );
-        }
-        return;
-      }
+  // Função para lidar com a troca de senha (DENTRO DO APP)
+  // Agora abrirá um diálogo para coletar as senhas
+  void _changePassword() {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Trocar Senha'),
+          content: Form(
+            key: _passwordFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _currentPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Senha Atual'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira sua senha atual.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Nova Senha'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira a nova senha.';
+                    }
+                    if (value.length < 6) {
+                      return 'A senha deve ter no mínimo 6 caracteres.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _confirmNewPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Confirme a Nova Senha'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, confirme a nova senha.';
+                    }
+                    if (value != _newPasswordController.text) {
+                      return 'As senhas não coincidem.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Fecha o diálogo
+                // Limpa os controladores após fechar o diálogo
+                _currentPasswordController.clear();
+                _newPasswordController.clear();
+                _confirmNewPasswordController.clear();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_passwordFormKey.currentState!.validate()) {
+                  Navigator.of(dialogContext).pop(); // Fecha o diálogo antes de iniciar a operação
 
-      setState(() {
-        _isLoading = true;
-      }); // Opcional: mostrar carregamento durante esta operação
+                  setState(() { _isLoading = true; }); // Ativa o loading na página principal
 
-      await supabase.auth.resetPasswordForEmail(
-        userEmail,
-        // Certifique-se de que SUA_URL_DE_REDIRECIONAMENTO_DE_SENHA está configurada
-        // corretamente no seu projeto Supabase e que seu aplicativo pode lidar com deep links.
-        // redirectTo: 'sua_url_de_redirecionamento_de_senha_aqui',
-      );
+                  try {
+                    // Supabase não exige a senha atual para update,
+                    // mas é uma boa prática para UX/segurança na validação do seu lado.
+                    // O Supabase irá verificar a sessão do usuário.
+                    await supabase.auth.updateUser(
+                      UserAttributes(
+                        password: _newPasswordController.text,
+                      ),
+                    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Link de redefinição de senha enviado para seu e-mail! Verifique sua caixa de entrada.')),
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Senha atualizada com sucesso!')),
+                      );
+                    }
+                  } on AuthException catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao atualizar senha: ${e.message}')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro inesperado ao atualizar senha: $e')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() { _isLoading = false; }); // Desativa o loading
+                      // Limpa os controladores após a tentativa de atualização
+                      _currentPasswordController.clear();
+                      _newPasswordController.clear();
+                      _confirmNewPasswordController.clear();
+                    }
+                  }
+                }
+              },
+              child: const Text('Confirmar'),
+            ),
+          ],
         );
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } on AuthException catch (e) {
-      // Use AuthException para erros de autenticação do Supabase
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Erro ao solicitar redefinição de senha: ${e.message}')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Erro inesperado ao solicitar redefinição: $e')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+      },
+    );
   }
 
   @override
@@ -301,13 +371,11 @@ class _UserPageState extends State<UserPage> {
                         backgroundImage:
                             _avatarUrl != null && _avatarUrl!.isNotEmpty
                                 ? (() {
-                                    // --- INÍCIO DA ADIÇÃO DO PRINT DE DEBUG ---
                                     final imageUrl = supabase.storage
                                         .from('avatars')
                                         .getPublicUrl(_avatarUrl!);
                                     print(
                                         'DEBUG: Tentando carregar imagem da URL: $imageUrl');
-                                    // --- FIM DA ADIÇÃO DO PRINT DE DEBUG ---
                                     return NetworkImage(imageUrl)
                                         as ImageProvider<Object>?;
                                   })()

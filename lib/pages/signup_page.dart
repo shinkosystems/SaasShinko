@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:saas_gestao_financeira/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:saas_gestao_financeira/pages/home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -35,16 +36,14 @@ class _SignUpPageState extends State<SignUpPage> {
           if (response.user != null) {
             final user = response.user!;
             try {
-              // --- INÍCIO DA ALTERAÇÃO: VERIFICA E INSERE O PERFIL ---
               // Primeiro, tenta buscar o perfil para ver se ele já existe
               final existingProfile = await Supabase.instance.client
                   .from('profiles')
                   .select('id')
                   .eq('id', user.id)
-                  .maybeSingle(); // maybeSingle retorna null se não encontrar
+                  .maybeSingle();
 
               if (existingProfile == null) {
-                // Se o perfil NÃO existe, então insira-o
                 await Supabase.instance.client.from('profiles').insert({
                   'id': user.id,
                   'username': _usernameController.text.trim(),
@@ -52,30 +51,36 @@ class _SignUpPageState extends State<SignUpPage> {
                 });
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Conta criada com sucesso! Verifique seu e-mail para confirmar.')),
+                  const SnackBar(content: Text('Conta criada com sucesso!')),
                 );
                 // Navegar para a página de login ou para a home
-                Navigator.of(context).pushReplacementNamed('/login'); // Ou '/home' se for login automático
+                Navigator.of(context).pushReplacementNamed(
+                    '/home'); // Ou '/home' se for login automático
               } else {
                 // Se o perfil JÁ existe (o que causa o "profiles_pkey" em chamadas duplicadas)
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro: Perfil já existente para este usuário. Redirecionando para Login.')),
+                  const SnackBar(
+                      content: Text(
+                          'Erro: Perfil já existente para este usuário. Redirecionando para Login.')),
                 );
-                Navigator.of(context).pushReplacementNamed('/login'); // Ou outra ação apropriada
+                Navigator.of(context)
+                    .pushReplacementNamed('/login'); // Ou outra ação apropriada
               }
               // --- FIM DA ALTERAÇÃO ---
-
             } catch (profileInsertError) {
               print('Erro ao inserir perfil: $profileInsertError');
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao criar perfil do usuário: $profileInsertError')),
+                SnackBar(
+                    content: Text(
+                        'Erro ao criar perfil do usuário: $profileInsertError')),
               );
             }
           } else {
             // Isso pode acontecer se o email já estiver em uso, mas o Supabase já trata com AuthException
             // Este bloco pode ser redundante se a AuthException pegar tudo.
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Email já utilizado por outro usuário!')),
+              const SnackBar(
+                  content: Text('Email já utilizado por outro usuário!')),
             );
           }
         }
@@ -94,7 +99,7 @@ class _SignUpPageState extends State<SignUpPage> {
       } finally {
         if (mounted) {
           setState(() {
-            _isLoading = false; // Desativa o estado de carregamento no final
+            _isLoading = false;
           });
         }
       }
@@ -138,7 +143,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(labelText: 'Nome de Usuário (Opcional)'),
+                  decoration: const InputDecoration(
+                      labelText: 'Nome de Usuário (Opcional)'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -160,7 +166,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 _isLoading
                     ? const CircularProgressIndicator()
                     : ElevatedButton(
-                        onPressed: _signUp, // Removido o ternário, pois o _isLoading já controla qual widget é exibido
+                        onPressed: _signUp,
                         child: const Text('Criar Conta'),
                       ),
                 // --- FIM DA ALTERAÇÃO ---

@@ -7,26 +7,16 @@ class AuthService {
   Future<AuthResponse> signUp({
     required String email,
     required String password,
-    String? username,
+    String? username, // O username será tratado na signup_page
   }) async {
     try {
       final AuthResponse response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        // Você pode passar dados adicionais aqui, mas para a tabela profiles,
       );
-
-      if (response.user != null) {
-        await _supabase.from('profiles').insert({
-          'id': response.user!.id,
-          'email': email,
-          'username': username, // Pode ser null se não fornecido
-          'created_at': DateTime.now().toIso8601String(),
-        });
-      }
       return response;
     } on AuthException catch (e) {
-      throw e; // Lança a exceção para ser tratada na UI
+      throw e;
     } catch (e) {
       throw Exception('Erro desconhecido ao registrar: $e');
     }
@@ -53,18 +43,14 @@ class AuthService {
   // Método para fazer logout
   Future<void> signOut() async {
     try {
-      print(
-          'DEBUG: Tentando fazer logout no Supabase...'); // Adicione esta linha
+      print('DEBUG: Tentando fazer logout no Supabase...');
       await _supabase.auth.signOut();
-      print(
-          'DEBUG: AuthService.signOut() executado com sucesso.'); // Adicione esta linha
+      print('DEBUG: AuthService.signOut() executado com sucesso.');
     } on AuthException catch (e) {
-      print(
-          'DEBUG: Erro no AuthService.signOut() (AuthException): ${e.message}'); // Melhorar o print
+      print('DEBUG: Erro no AuthService.signOut() (AuthException): ${e.message}');
       throw e;
     } catch (e) {
-      print(
-          'DEBUG: Erro no AuthService.signOut() (desconhecido): $e'); // Melhorar o print
+      print('DEBUG: Erro no AuthService.signOut() (desconhecido): $e');
       throw Exception('Erro desconhecido ao fazer logout: $e');
     }
   }

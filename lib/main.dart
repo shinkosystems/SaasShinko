@@ -10,7 +10,7 @@ import 'package:saas_gestao_financeira/add_expense_screen.dart';
 import 'package:saas_gestao_financeira/transaction_model.dart';
 import 'package:saas_gestao_financeira/transaction_detail_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:saas_gestao_financeira/user_page.dart';
+import 'package:saas_gestao_financeira/pages/user_page.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira/pdf_report_generator.dart';

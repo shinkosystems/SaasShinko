@@ -5,7 +5,7 @@ import 'package:saas_gestao_financeira/add_income_screen.dart';
 import 'package:saas_gestao_financeira/add_expense_screen.dart';
 import 'package:saas_gestao_financeira/transaction_model.dart';
 import 'package:saas_gestao_financeira/transaction_detail_screen.dart';
-import 'package:saas_gestao_financeira/user_page.dart';
+import 'package:saas_gestao_financeira/pages/user_page.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira/pdf_report_generator.dart';
@@ -13,7 +13,7 @@ import 'package:saas_gestao_financeira/services/auth_service.dart';
 
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key}); // Removido 'required this.title'
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -37,7 +37,6 @@ class _HomePageState extends State<HomePage> {
   // MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
   Future<void> _checkAssetExistence() async {
     try {
-      // Tenta carregar o asset diretamente pelo AssetBundle
       await DefaultAssetBundle.of(context)
           .load('assets/logocerta.png'); // <--- Use o nome exato aqui!
       print(

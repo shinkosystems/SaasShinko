@@ -23,8 +23,8 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   bool _areNumbersVisible = true;
 
-  // NOVAS VARIÁVEIS DE ESTADO PARA O FILTRO DE DATAS
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _startDate = DateTime(
+      DateTime.now().year, DateTime.now().month, 1);
   DateTime _endDate = DateTime.now();
 
   final SupabaseClient supabase = Supabase.instance.client;
@@ -34,29 +34,21 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _checkAssetExistence();
-    _fetchTransactions(); // Inicia o carregamento com o período padrão
+    _fetchTransactions();
   }
 
-  // MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
   Future<void> _checkAssetExistence() async {
     try {
-      await DefaultAssetBundle.of(context)
-          .load('assets/logocerta.png'); // <--- Use o nome exato aqui!
-      print(
-          '>>> DEBUG: Asset "assets/logocerta.png" parece estar carregável pelo AssetBundle.');
+      await DefaultAssetBundle.of(context).load('assets/logocerta.png');
+      print('>>> DEBUG: Asset "assets/logocerta.png" parece estar carregável pelo AssetBundle.');
     } on FlutterError catch (e) {
-      print(
-          '>>> DEBUG: ERRO Flutter ao carregar asset "assets/logocerta.png" pelo AssetBundle: $e');
-      print(
-          '>>> DEBUG: Verifique se o nome do arquivo está EXATO (case-sensitive) e se o pubspec.yaml está correto na seção assets.');
+      print('>>> DEBUG: ERRO Flutter ao carregar asset "assets/logocerta.png" pelo AssetBundle: $e');
+      print('>>> DEBUG: Verifique se o nome do arquivo está EXATO (case-sensitive) e se o pubspec.yaml está correto na seção assets.');
     } catch (e) {
-      print(
-          '>>> DEBUG: ERRO geral ao verificar asset "assets/logocerta.png": $e');
+      print('>>> DEBUG: ERRO geral ao verificar asset "assets/logocerta.png": $e');
     }
   }
-  // FIM DO MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
 
-  // NOVO MÉTODO PARA ABRIR O SELETOR DE DATAS
   Future<void> _selectDateRange(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
@@ -68,17 +60,15 @@ class _HomePageState extends State<HomePage> {
       confirmText: 'Confirmar',
       saveText: 'Salvar',
     );
-    // Verifica se o usuário selecionou um novo período válido
     if (picked != null && picked != DateTimeRange(start: _startDate, end: _endDate)) {
       setState(() {
         _startDate = picked.start;
         _endDate = picked.end;
       });
-      _fetchTransactions(); // Recarrega as transações com o novo período
+      _fetchTransactions();
     }
   }
 
-  // Método para buscar as transações do Supabase
   Future<void> _fetchTransactions() async {
     print('>>> _fetchTransactions() iniciado.');
     if (!mounted) {
@@ -90,14 +80,13 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // Obter o ID do usuário logado
       final User? user = supabase.auth.currentUser;
       if (user == null) {
         print('Nenhum usuário logado. Não é possível buscar transações.');
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _transactions = []; // Limpa as transações se não houver usuário logado
+            _transactions = [];
           });
         }
         return;
@@ -107,26 +96,20 @@ class _HomePageState extends State<HomePage> {
           .from('transactions')
           .select('*')
           .eq('user_id', user.id)
-          // FILTROS DE DATA ADICIONADOS AQUI!
           .gte('date', _startDate.toIso8601String())
           .lte('date', _endDate.toIso8601String())
           .order('date', ascending: false);
 
-      print('>>> Resposta bruta do Supabase: $response'); // Manter para debug
+      print('>>> Resposta bruta do Supabase: $response');
 
       if (mounted) {
         setState(() {
-          _transactions =
-              response.map((json) => Transaction.fromJson(json)).toList();
+          _transactions = response.map((json) => Transaction.fromJson(json)).toList();
           _isLoading = false;
-          print(
-              '>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
-          print(
-              '>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
-          print(
-              '>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
-          print(
-              '>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
+          print('>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
+          print('>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
+          print('>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
+          print('>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
         });
       }
     } on PostgrestException catch (e) {
@@ -167,23 +150,18 @@ class _HomePageState extends State<HomePage> {
     return totalIncome - totalExpense;
   }
 
-  // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS RECEITAS
   double get _monthlyIncome {
-    // Agora o cálculo usa a lista _transactions já filtrada
     return _transactions
         .where((t) => t.type == TransactionType.income)
         .fold(0.0, (sum, item) => sum + item.value);
   }
 
-  // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS DESPESAS
   double get _monthlyExpense {
-    // Agora o cálculo usa a lista _transactions já filtrada
     return _transactions
         .where((t) => t.type == TransactionType.expense)
         .fold(0.0, (sum, item) => sum + item.value);
   }
 
-  // FUNÇÃO PARA EXCLUIR TRANSAÇÕES CADASTRADAS
   Future<void> _deleteTransactionFromList(String transactionId) async {
     final bool? confirm = await showDialog(
       context: context,
@@ -208,17 +186,14 @@ class _HomePageState extends State<HomePage> {
     if (confirm == true) {
       try {
         print('>>> Tentando excluir transação com ID: $transactionId');
-        await supabase
-            .from('transactions')
-            .delete()
-            .eq('id', transactionId); // Usa o ID da transação passada
+        await supabase.from('transactions').delete().eq('id', transactionId);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Transação excluída com sucesso!')),
           );
         }
-        _fetchTransactions(); // Recarrega a lista após a exclusão
+        _fetchTransactions();
       } catch (error) {
         print('Erro de exclusão Supabase (direto da lista): $error');
         if (mounted) {
@@ -229,17 +204,14 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  //FIM DA FUNÇÃO PARA EXCLUIR TRANSAÇÕES CADASTRADAS
 
-  // FUNÇÃO PARA FAZER LOGOUT
   Future<void> _logout() async {
     if (!mounted) return;
     setState(() {
-      _isLoading = true; // Opcional, para mostrar um loading durante o logout
+      _isLoading = true;
     });
     try {
       await _authService.signOut();
-      // O listener em MyApp já tratará o redirecionamento para a página de login.
     } catch (e) {
       print('Erro ao fazer logout: $e');
       if (mounted) {
@@ -255,7 +227,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  //FIM FA FUNÇÃO PARA FAZER LOGOUT
 
   @override
   Widget build(BuildContext context) {
@@ -264,10 +235,8 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         toolbarHeight: 80.0,
         title: Center(
-          // Centraliza o conteúdo da Row
           child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Centraliza os itens dentro da Row
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
                 'assets/logocerta.png',
@@ -278,7 +247,6 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        // ÍCONES DA APP BAR
         actions: [
           IconButton(
             icon: Icon(
@@ -288,44 +256,37 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               if (mounted) {
                 setState(() {
-                  _areNumbersVisible = !_areNumbersVisible; // Inverte o valor
+                  _areNumbersVisible = !_areNumbersVisible;
                 });
               }
             },
             tooltip: _areNumbersVisible ? 'Ocultar Valores' : 'Mostrar Valores',
           ),
-          // REMOVIDO: O botão do datepicker foi movido para o corpo da página.
         ],
       ),
-      // FIM DA APP BAR
-
-      // INÍCIO DO DRAWER - MENU LATERAL
       drawer: Drawer(
-        child: Column( // Use Column para empilhar o cabeçalho, a lista de itens e o item fixo de logout
+        child: Column(
           children: <Widget>[
-            // Cabeçalho do Drawer (DrawerHeader)
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 172, 224, 207), // Cor de fundo do cabeçalho
+                color: Color.fromARGB(255, 172, 224, 207),
               ),
               child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Menu',
                   style: TextStyle(
-                    color: Color.fromARGB(255, 0, 0, 0), // Cor do texto no cabeçalho
+                    color: Color.fromARGB(255, 0, 0, 0),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            // Área expansível para os itens do menu (Página do Usuário, etc.)
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero, // Mantenha isso para evitar padding extra no ListView
+                padding: EdgeInsets.zero,
                 children: <Widget>[
-                  // Item: Página do Usuário
                   ListTile(
                     leading: const Icon(Icons.person),
                     title: const Text('Página do Usuário'),
@@ -340,22 +301,19 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // INÍCIO DO ÍCONE DE LOGOUT
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Sair'),
               onTap: () {
-                Navigator.pop(context); // Fecha o drawer antes de fazer logout
-                _logout(); // Chama a função de logout
+                Navigator.pop(context);
+                _logout();
               },
             ),
             const SizedBox(height: 8.0),
           ],
         ),
       ),
-      // FIM DO DRAWER - MENU LATERAL
-
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
@@ -370,7 +328,25 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-
+            
+            // INÍCIO DO SELETOR DE DATAS (CORRIGIDO)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton(
+                onPressed: () => _selectDateRange(context),
+                child: Text(
+                  'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+            // FIM DO SELETOR DE DATAS (CORRIGIDO)
+            const SizedBox(height: 16),
+            
             // INÍCIO DA ROW DOS CARDS
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -384,24 +360,24 @@ class _HomePageState extends State<HomePage> {
                       elevation: 4,
                       child: Padding(
                         padding: const EdgeInsets.all(
-                            8.0), // Padding ajustado para 3 cards
+                            8.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
                               'Saldo Atual',
                               style: TextStyle(
-                                fontSize: 14, // Fonte ajustada para 3 cards
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 4), // Espaçamento ajustado
+                            const SizedBox(height: 4),
                             Text(
                               _areNumbersVisible
-                                  ? 'R\$ ${_currentBalance.toStringAsFixed(2)}' // Exibe o valor
-                                  : '*****', // Oculta o valor
+                                  ? 'R\$ ${_currentBalance.toStringAsFixed(2)}'
+                                  : '***',
                               style: const TextStyle(
-                                fontSize: 18, // Fonte ajustada
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueAccent,
                               ),
@@ -411,7 +387,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8), // Espaçamento entre os cards
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Card(
                       elevation: 4,
@@ -430,8 +406,8 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 4),
                             Text(
                               _areNumbersVisible
-                                  ? 'R\$ ${_monthlyIncome.toStringAsFixed(2)}' // Exibe o valor
-                                  : '*****', // Oculta o valor
+                                  ? 'R\$ ${_monthlyIncome.toStringAsFixed(2)}'
+                                  : '***',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -443,29 +419,29 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8), // Espaçamento entre os cards
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Card(
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0), // Padding ajustado
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Text(
-                              'Despesas', // Texto mais curto
+                              'Despesas',
                               style: TextStyle(
-                                fontSize: 14, // Fonte ajustada
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 4), // Espaçamento ajustado
+                            const SizedBox(height: 4),
                             Text(
                               _areNumbersVisible
-                                  ? 'R\$ ${_monthlyExpense.toStringAsFixed(2)}' // Exibe o valor
-                                  : '*****', // Oculta o valor,
+                                  ? 'R\$ ${_monthlyExpense.toStringAsFixed(2)}'
+                                  : '***',
                               style: const TextStyle(
-                                fontSize: 18, // Fonte ajustada
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.redAccent,
                               ),
@@ -544,12 +520,10 @@ class _HomePageState extends State<HomePage> {
                     return;
                   }
                   try {
-                    // Gera o PDF
                     final pdfBytes =
                         await PdfReportGenerator.generateTransactionReport(
                             _transactions);
 
-                    // Abre o visualizador de PDF (ou a opção de compartilhar/imprimir)
                     await Printing.layoutPdf(
                         onLayout: (PdfPageFormat format) async => pdfBytes);
 
@@ -571,24 +545,16 @@ class _HomePageState extends State<HomePage> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  // Cores do botão
-                  backgroundColor: const Color(
-                      0xFF025928), // Cor de fundo do botão (ex: roxo)
-                  foregroundColor: Colors
-                      .white, // Cor do texto e ícones do botão (ex: branco)
-
-                  // Opcional: Ajuste de padding ou tamanho mínimo
+                  backgroundColor: const Color(0xFF025928),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 30, vertical: 15), // Padding interno
+                      horizontal: 30, vertical: 15),
                   minimumSize:
-                      const Size(200, 50), // Tamanho mínimo (largura, altura)
-
-                  // Opcional: Bordas arredondadas
+                      const Size(200, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.circular(40), // Bordas arredondadas
+                        BorderRadius.circular(40),
                   ),
-                  // Opcional: Elevação da sombra
                   elevation: 5,
                 ),
                 child: const Text(
@@ -596,29 +562,12 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(
                       fontSize: 18,
                       fontWeight:
-                          FontWeight.bold), // <--- Opcional: Estilo do texto
+                          FontWeight.bold),
                 ),
               ),
             ),
             // FIM DO BOTÃO VER RELATÓRIO
-
-            // BOTÃO SELETOR DE DATAS
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: TextButton(
-                onPressed: () => _selectDateRange(context),
-                child: Text(
-                  'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ),
-            // FIM DA NOVO BOTÃO DE SELETOR DE DATAS
-
+            
             // INÍCIO DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -638,14 +587,12 @@ class _HomePageState extends State<HomePage> {
                       )
                     : ListView.builder(
                         shrinkWrap: true,
-                        physics:
-                            const NeverScrollableScrollPhysics(),
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: _transactions.length,
                         itemBuilder: (context, index) {
                           final transaction = _transactions[index];
                           return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Card(
                               margin: const EdgeInsets.symmetric(vertical: 8.0),
                               elevation: 2,
@@ -680,10 +627,9 @@ class _HomePageState extends State<HomePage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      // Visibilidade de números (seu código já tem isso)
                                       _areNumbersVisible
                                           ? 'R\$ ${transaction.value.toStringAsFixed(2)}'
-                                          : 'R\$ *****.**',
+                                          : 'R\$ **.*',
                                       style: TextStyle(
                                         color: transaction.type ==
                                                 TransactionType.income

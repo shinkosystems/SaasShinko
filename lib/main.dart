@@ -14,17 +14,18 @@ import 'package:saas_gestao_financeira/pages/user_page.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira/pdf_report_generator.dart';
+import 'package:supabase/supabase.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await dotenv.load(fileName: ".env");
+  const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(const MyApp());

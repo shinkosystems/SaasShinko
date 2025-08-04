@@ -1,9 +1,14 @@
 {
-  "version": 2,
-  "routes": [
+  "builds": [
     {
-      "src": "/.*",
-      "dest": "build/web/index.html"
+      "src": "**/pubspec.yaml",
+      "use": "@n4b/vercel-flutter",
+      "config": {
+        "flutterVersion": "3.22.0"
+      }
     }
-  ]
+  ],
+  "installCommand": "flutter doctor",
+  "buildCommand": "flutter build web --web-renderer html --no-sound-null-safety --release",
+  "outputDirectory": "build/web"
 }

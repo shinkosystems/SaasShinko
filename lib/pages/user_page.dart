@@ -14,7 +14,6 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  // Variáveis de estado
   String _userName = 'Carregando...';
   String _userEmail = 'Carregando...';
   File? _profileImage;
@@ -25,12 +24,10 @@ class _UserPageState extends State<UserPage> {
 
   bool _profileLoaded = false;
 
-  // Controladores para os campos de troca de senha
   final TextEditingController _currentPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmNewPasswordController = TextEditingController();
 
-  // Chave para o formulário de senha (se você quiser validação de formulário)
   final GlobalKey<FormState> _passwordFormKey = GlobalKey<FormState>();
 
   @override
@@ -77,10 +74,12 @@ class _UserPageState extends State<UserPage> {
           _userName = 'Usuário não logado';
           _userEmail = '';
         });
+        print('DEBUG: Usuário não logado. _isLoading = false.'); // DEBUG
         return;
       }
 
-      // Buscar os dados do perfil na tabela 'profiles'
+      print('DEBUG: userId encontrado: $_userId'); // DEBUG
+
       final response = await supabase
           .from('profiles')
           .select('username, email, avatar_url')
@@ -95,6 +94,10 @@ class _UserPageState extends State<UserPage> {
           _isLoading = false;
           _profileLoaded = true;
         });
+        print('DEBUG: Perfil carregado com sucesso!'); // DEBUG
+        print('DEBUG: _userName: $_userName'); // DEBUG
+        print('DEBUG: _userEmail: $_userEmail'); // DEBUG
+        print('DEBUG: _avatarUrl no _getProfile: $_avatarUrl'); // DEBUG
       }
     } on PostgrestException catch (e) {
       if (mounted) {
@@ -108,6 +111,7 @@ class _UserPageState extends State<UserPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Crie seu perfil inicial.')),
           );
+          print('DEBUG: Perfil não encontrado (PGRST116). _isLoading = false.'); // DEBUG
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro ao carregar perfil: ${e.message}')),
@@ -118,6 +122,7 @@ class _UserPageState extends State<UserPage> {
             _userName = 'Erro ao carregar';
             _userEmail = '';
           });
+          print('DEBUG: Erro Postgrest ao carregar perfil: ${e.message}. _isLoading = false.'); // DEBUG
         }
       }
     } catch (e) {
@@ -131,11 +136,11 @@ class _UserPageState extends State<UserPage> {
           _userName = 'Erro inesperado';
           _userEmail = '';
         });
+        print('DEBUG: Erro inesperado ao carregar perfil: $e. _isLoading = false.'); // DEBUG
       }
     }
   }
 
-  // Função para selecionar e fazer upload da imagem de perfil
   Future<void> _pickAndUploadImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -144,7 +149,6 @@ class _UserPageState extends State<UserPage> {
 
     if (image == null) return;
 
-    // Verificar se o usuário está logado antes de tentar upload
     _userId = supabase.auth.currentUser?.id;
     if (_userId == null) {
       if (mounted) {
@@ -168,8 +172,9 @@ class _UserPageState extends State<UserPage> {
       _isLoading = true; // Mostra carregamento ao fazer upload
     });
 
+    print('DEBUG: Tentando fazer upload para o path: $storagePath'); // DEBUG
+
     try {
-      // Faça o upload da imagem para o Supabase Storage
       await supabase.storage.from('avatars').upload(
             storagePath,
             imageFile,
@@ -180,7 +185,6 @@ class _UserPageState extends State<UserPage> {
             ),
           );
 
-      // Atualize o URL do avatar na tabela 'profiles'
       await supabase.from('profiles').update({
         'avatar_url':
             storagePath, // Salve o caminho no storage, não o public URL completo
@@ -190,14 +194,15 @@ class _UserPageState extends State<UserPage> {
       if (mounted) {
         setState(() {
           _profileImage =
-              imageFile; // Atualiza a imagem local (opcional, pois NetworkImage será usado)
+              imageFile;
           _avatarUrl =
-              storagePath; // Atualiza o URL local para que o NetworkImage possa carregar
+              storagePath;
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Foto de perfil atualizada!')),
         );
+        print('DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl'); // DEBUG
       }
     } on StorageException catch (e) {
       if (mounted) {
@@ -207,6 +212,7 @@ class _UserPageState extends State<UserPage> {
         setState(() {
           _isLoading = false;
         });
+        print('DEBUG: Erro StorageException ao fazer upload: ${e.message}'); // DEBUG
       }
     } catch (e) {
       if (mounted) {
@@ -216,12 +222,11 @@ class _UserPageState extends State<UserPage> {
         setState(() {
           _isLoading = false;
         });
+        print('DEBUG: Erro inesperado ao fazer upload da foto: $e'); // DEBUG
       }
     }
   }
 
-  // Função para lidar com a troca de senha (DENTRO DO APP)
-  // Agora abrirá um diálogo para coletar as senhas
   void _changePassword() {
     showDialog(
       context: context,
@@ -231,7 +236,7 @@ class _UserPageState extends State<UserPage> {
           content: Form(
             key: _passwordFormKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min, // Changed to .min
               children: [
                 TextFormField(
                   controller: _currentPasswordController,
@@ -280,8 +285,7 @@ class _UserPageState extends State<UserPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Fecha o diálogo
-                // Limpa os controladores após fechar o diálogo
+                Navigator.of(dialogContext).pop();
                 _currentPasswordController.clear();
                 _newPasswordController.clear();
                 _confirmNewPasswordController.clear();
@@ -291,14 +295,11 @@ class _UserPageState extends State<UserPage> {
             ElevatedButton(
               onPressed: () async {
                 if (_passwordFormKey.currentState!.validate()) {
-                  Navigator.of(dialogContext).pop(); // Fecha o diálogo antes de iniciar a operação
+                  Navigator.of(dialogContext).pop();
 
-                  setState(() { _isLoading = true; }); // Ativa o loading na página principal
+                  setState(() { _isLoading = true; });
 
                   try {
-                    // Supabase não exige a senha atual para update,
-                    // mas é uma boa prática para UX/segurança na validação do seu lado.
-                    // O Supabase irá verificar a sessão do usuário.
                     await supabase.auth.updateUser(
                       UserAttributes(
                         password: _newPasswordController.text,
@@ -324,8 +325,7 @@ class _UserPageState extends State<UserPage> {
                     }
                   } finally {
                     if (mounted) {
-                      setState(() { _isLoading = false; }); // Desativa o loading
-                      // Limpa os controladores após a tentativa de atualização
+                      setState(() { _isLoading = false; });
                       _currentPasswordController.clear();
                       _newPasswordController.clear();
                       _confirmNewPasswordController.clear();
@@ -352,7 +352,7 @@ class _UserPageState extends State<UserPage> {
       body: _isLoading
           ? const Center(
               child:
-                  CircularProgressIndicator()) // Mostra um indicador de carregamento
+                  CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Center(
@@ -360,14 +360,12 @@ class _UserPageState extends State<UserPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Foto de Perfil
                     GestureDetector(
                       onTap:
-                          _pickAndUploadImage, // Chama a nova função de upload
+                          _pickAndUploadImage,
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[200],
-                        // Usa NetworkImage se _avatarUrl existir, FileImage se _profileImage existir localmente, senão null
                         backgroundImage:
                             _avatarUrl != null && _avatarUrl!.isNotEmpty
                                 ? (() {
@@ -375,13 +373,12 @@ class _UserPageState extends State<UserPage> {
                                         .from('avatars')
                                         .getPublicUrl(_avatarUrl!);
                                     print(
-                                        'DEBUG: Tentando carregar imagem da URL: $imageUrl');
+                                        'DEBUG: Tentando carregar imagem da URL: $imageUrl'); // Print original
                                     return NetworkImage(imageUrl)
                                         as ImageProvider<Object>?;
                                   })()
                                 : (_profileImage != null
                                     ? FileImage(_profileImage!)
-                                        as ImageProvider<Object>?
                                     : null),
                         child: (_avatarUrl == null || _avatarUrl!.isEmpty) &&
                                 _profileImage == null
@@ -394,8 +391,6 @@ class _UserPageState extends State<UserPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // Exibição do Nome (maior e em negrito)
                     Text(
                       _userName,
                       style: const TextStyle(
@@ -405,16 +400,12 @@ class _UserPageState extends State<UserPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-
-                    // Exibição do E-mail
                     Text(
                       _userEmail,
                       style: const TextStyle(fontSize: 18, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-
-                    // Botão para Trocar Senha
                     ElevatedButton.icon(
                       onPressed: _changePassword,
                       icon: const Icon(Icons.lock_reset),
@@ -429,7 +420,6 @@ class _UserPageState extends State<UserPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
                   ],
                 ),

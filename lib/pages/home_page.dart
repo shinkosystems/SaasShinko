@@ -294,12 +294,7 @@ class _HomePageState extends State<HomePage> {
             },
             tooltip: _areNumbersVisible ? 'Ocultar Valores' : 'Mostrar Valores',
           ),
-          // NOVO BOTÃO PARA FILTRAR POR DATA
-          IconButton(
-            icon: const Icon(Icons.calendar_today, size: 30.0),
-            onPressed: () => _selectDateRange(context),
-            tooltip: 'Filtrar por período',
-          ),
+          // REMOVIDO: O botão do datepicker foi movido para o corpo da página.
         ],
       ),
       // FIM DA APP BAR
@@ -366,17 +361,11 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
-              child: Column( // Adicionada uma nova Column para o título e o período
+              child: Column(
                 children: [
                   Text(
                     "Visão Geral",
                     style: Theme.of(context).textTheme.headlineLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    // EXIBE O PERÍODO SELECIONADO
-                    'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
-                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],
               ),
@@ -612,6 +601,23 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             // FIM DO BOTÃO VER RELATÓRIO
+
+            // BOTÃO SELETOR DE DATAS
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton(
+                onPressed: () => _selectDateRange(context),
+                child: Text(
+                  'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+            // FIM DA NOVO BOTÃO DE SELETOR DE DATAS
 
             // INÍCIO DA LISTA DO BALANÇO CADASTRADO PELO USUÁRIO
             Padding(

@@ -15,7 +15,6 @@
       "dest": "build/web/index.html"
     }
   ],
-  "installCommand": "flutter pub get",
-  "buildCommand": "flutter build web --release",
-  "framework": "flutter"
+  "installCommand": "bash ./install_flutter.sh && flutter pub get",
+  "buildCommand": "flutter build web --release"
 }

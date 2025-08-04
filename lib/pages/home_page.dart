@@ -11,7 +11,6 @@ import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira/pdf_report_generator.dart';
 import 'package:saas_gestao_financeira/services/auth_service.dart';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -24,6 +23,10 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   bool _areNumbersVisible = true;
 
+  // NOVAS VARIÁVEIS DE ESTADO PARA O FILTRO DE DATAS
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+
   final SupabaseClient supabase = Supabase.instance.client;
   final AuthService _authService = AuthService();
 
@@ -31,7 +34,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _checkAssetExistence();
-    _fetchTransactions();
+    _fetchTransactions(); // Inicia o carregamento com o período padrão
   }
 
   // MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
@@ -53,9 +56,35 @@ class _HomePageState extends State<HomePage> {
   }
   // FIM DO MÉTODO DE DEPURACAO PARA O ASSET DA LOGO
 
+  // NOVO MÉTODO PARA ABRIR O SELETOR DE DATAS
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+      helpText: 'Selecione o período',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+      saveText: 'Salvar',
+    );
+    // Verifica se o usuário selecionou um novo período válido
+    if (picked != null && picked != DateTimeRange(start: _startDate, end: _endDate)) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+      _fetchTransactions(); // Recarrega as transações com o novo período
+    }
+  }
+
   // Método para buscar as transações do Supabase
   Future<void> _fetchTransactions() async {
     print('>>> _fetchTransactions() iniciado.');
+    if (!mounted) {
+      print('>>> _fetchTransactions(): Widget não está montado, abortando setState().');
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
@@ -65,12 +94,12 @@ class _HomePageState extends State<HomePage> {
       final User? user = supabase.auth.currentUser;
       if (user == null) {
         print('Nenhum usuário logado. Não é possível buscar transações.');
-        setState(() {
-          _isLoading = false;
-          _transactions = []; // Limpa as transações se não houver usuário logado
-        });
-        // Idealmente, este widget só é acessível se o usuário estiver logado.
-        // O redirecionamento na MyApp já cuidará disso.
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _transactions = []; // Limpa as transações se não houver usuário logado
+          });
+        }
         return;
       }
 
@@ -78,39 +107,48 @@ class _HomePageState extends State<HomePage> {
           .from('transactions')
           .select('*')
           .eq('user_id', user.id)
+          // FILTROS DE DATA ADICIONADOS AQUI!
+          .gte('date', _startDate.toIso8601String())
+          .lte('date', _endDate.toIso8601String())
           .order('date', ascending: false);
 
       print('>>> Resposta bruta do Supabase: $response'); // Manter para debug
 
-      setState(() {
-        _transactions =
-            response.map((json) => Transaction.fromJson(json)).toList();
-        _isLoading = false;
-        print(
-            '>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
-        print(
-            '>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
-        print(
-            '>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
-        print(
-            '>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
-      });
+      if (mounted) {
+        setState(() {
+          _transactions =
+              response.map((json) => Transaction.fromJson(json)).toList();
+          _isLoading = false;
+          print(
+              '>>> Transações fetched e _transactions atualizado. Total: ${_transactions.length}');
+          print(
+              '>>> Saldo Atual Calculado: R\$ ${_currentBalance.toStringAsFixed(2)}');
+          print(
+              '>>> Receitas Mês Calculado: R\$ ${_monthlyIncome.toStringAsFixed(2)}');
+          print(
+              '>>> Despesas Mês Calculado: R\$ ${_monthlyExpense.toStringAsFixed(2)}');
+        });
+      }
     } on PostgrestException catch (e) {
       print('>>> ERRO Postgrest ao buscar transações: ${e.message}');
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) { // Verifica se o widget ainda está montado antes de mostrar o SnackBar
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao carregar transações: ${e.message}')),
         );
       }
     } catch (error) {
       print('>>> ERRO geral ao buscar transações: $error');
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) { // Verifica se o widget ainda está montado antes de mostrar o SnackBar
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao carregar transações: $error')),
         );
@@ -131,6 +169,7 @@ class _HomePageState extends State<HomePage> {
 
   // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS RECEITAS
   double get _monthlyIncome {
+    // Agora o cálculo usa a lista _transactions já filtrada
     return _transactions
         .where((t) => t.type == TransactionType.income)
         .fold(0.0, (sum, item) => sum + item.value);
@@ -138,6 +177,7 @@ class _HomePageState extends State<HomePage> {
 
   // FUNÇÃO PARA CALCULAR O TOTAL DE TODAS AS DESPESAS
   double get _monthlyExpense {
+    // Agora o cálculo usa a lista _transactions já filtrada
     return _transactions
         .where((t) => t.type == TransactionType.expense)
         .fold(0.0, (sum, item) => sum + item.value);
@@ -193,6 +233,7 @@ class _HomePageState extends State<HomePage> {
 
   // FUNÇÃO PARA FAZER LOGOUT
   Future<void> _logout() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true; // Opcional, para mostrar um loading durante o logout
     });
@@ -245,13 +286,20 @@ class _HomePageState extends State<HomePage> {
               size: 30.0,
             ),
             onPressed: () {
-              setState(() {
-                _areNumbersVisible = !_areNumbersVisible; // Inverte o valor
-              });
+              if (mounted) {
+                setState(() {
+                  _areNumbersVisible = !_areNumbersVisible; // Inverte o valor
+                });
+              }
             },
             tooltip: _areNumbersVisible ? 'Ocultar Valores' : 'Mostrar Valores',
           ),
-          // Local para mais ícones
+          // NOVO BOTÃO PARA FILTRAR POR DATA
+          IconButton(
+            icon: const Icon(Icons.calendar_today, size: 30.0),
+            onPressed: () => _selectDateRange(context),
+            tooltip: 'Filtrar por período',
+          ),
         ],
       ),
       // FIM DA APP BAR
@@ -318,11 +366,19 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
-              child: Text(
-                "Visão Geral",
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineLarge,
+              child: Column( // Adicionada uma nova Column para o título e o período
+                children: [
+                  Text(
+                    "Visão Geral",
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    // EXIBE O PERÍODO SELECIONADO
+                    'Período: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
               ),
             ),
 
@@ -511,7 +567,8 @@ class _HomePageState extends State<HomePage> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content: Text('Relatório PDF gerado com sucesso!')),
+                            content:
+                                Text('Relatório PDF gerado com sucesso!')),
                       );
                     }
                   } catch (e) {
@@ -631,7 +688,8 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 32.0),
                                     IconButton(
-                                      icon: const Icon(Icons.edit, size: 20.0),
+                                      icon:
+                                          const Icon(Icons.edit, size: 20.0),
                                       color: Colors.grey[600],
                                       onPressed: () async {
                                         final result = await Navigator.push(
@@ -649,8 +707,8 @@ class _HomePageState extends State<HomePage> {
                                       tooltip: 'Editar Transação',
                                     ),
                                     IconButton(
-                                      icon:
-                                          const Icon(Icons.delete, size: 20.0),
+                                      icon: const Icon(Icons.delete,
+                                          size: 20.0),
                                       color: Colors.red[400],
                                       onPressed: () {
                                         _deleteTransactionFromList(

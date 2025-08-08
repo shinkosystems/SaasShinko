@@ -455,7 +455,7 @@ class _HomePageState extends State<HomePage> {
             Text(
               _isMoneyVisible ? _formatCurrency(amount) : 'R\$ ******',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

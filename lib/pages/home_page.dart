@@ -145,30 +145,31 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
-    });
+          _fetchTransactions(startDate: _startDate, endDate: _endDate);
+        });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
-    });
+          _fetchTransactions(startDate: _startDate, endDate: _endDate);
+        });
   }
 
   void _editTransaction(Transaction transaction) {
     Navigator.of(context)
         .push(
-      MaterialPageRoute(
-        builder: (context) => TransactionDetailScreen(transaction: transaction),
-      ),
-    )
+          MaterialPageRoute(
+            builder: (context) =>
+                TransactionDetailScreen(transaction: transaction),
+          ),
+        )
         .then((shouldRefresh) {
-      if (shouldRefresh == true) {
-        _fetchTransactions(startDate: _startDate, endDate: _endDate);
-      }
-    });
+          if (shouldRefresh == true) {
+            _fetchTransactions(startDate: _startDate, endDate: _endDate);
+          }
+        });
   }
 
   String _formatCurrency(double amount) {
@@ -185,34 +186,25 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        toolbarHeight: 80.0,
-        title: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/logocerta.png',
-                  height: 250,
-                  width: 300,
-                  fit: BoxFit.contain,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isMoneyVisible ? Icons.visibility : Icons.visibility_off,
-            ),
-            onPressed: _toggleMoneyVisibility,
-          ),
-        ],
+appBar: AppBar(
+  backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+  toolbarHeight: 80.0,
+  centerTitle: true, // Adicionado para centralizar o título
+  title: Image.asset(
+    'assets/logocerta.png',
+    height: 250,
+    width: 300,
+    fit: BoxFit.contain,
+  ),
+  actions: [
+    IconButton(
+      icon: Icon(
+        _isMoneyVisible ? Icons.visibility : Icons.visibility_off,
       ),
+      onPressed: _toggleMoneyVisibility,
+    ),
+  ],
+),
       drawer: Drawer(
         child: Column(
           children: [
@@ -274,7 +266,7 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           'Que bom te ver por aqui, ${_userName ?? '[username]'}!',
                           style: const TextStyle(
-                            fontSize: 22,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -284,7 +276,7 @@ class _HomePageState extends State<HomePage> {
                           child: Text(
                             'Visão Geral',
                             style: TextStyle(
-                              fontSize: 26,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -313,8 +305,8 @@ class _HomePageState extends State<HomePage> {
                               try {
                                 final pdfBytes =
                                     await PdfReportGenerator.generateTransactionReport(
-                                  _transactions,
-                                );
+                                      _transactions,
+                                    );
 
                                 await Printing.layoutPdf(
                                   onLayout: (PdfPageFormat format) async =>
@@ -370,7 +362,7 @@ class _HomePageState extends State<HomePage> {
                           child: Text(
                             'Filtrar por período',
                             style: TextStyle(
-                              fontSize: 26,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -386,8 +378,9 @@ class _HomePageState extends State<HomePage> {
                               label: Text(
                                 _startDate == null
                                     ? 'Data Inicial'
-                                    : DateFormat('dd/MM/yyyy')
-                                        .format(_startDate!),
+                                    : DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(_startDate!),
                               ),
                             ),
                             TextButton.icon(
@@ -397,7 +390,9 @@ class _HomePageState extends State<HomePage> {
                               label: Text(
                                 _endDate == null
                                     ? 'Data Final'
-                                    : DateFormat('dd/MM/yyyy').format(_endDate!),
+                                    : DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(_endDate!),
                               ),
                             ),
                           ],
@@ -407,7 +402,7 @@ class _HomePageState extends State<HomePage> {
                           child: Text(
                             'Últimas Transações',
                             style: TextStyle(
-                              fontSize: 26,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -428,21 +423,26 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         Expanded(
-          child: _buildSummaryCard('Saldo Atual', _balance, Colors.blue),
+          child: _buildSummaryCard('Saldo Atual', _balance, Colors.blue, 14),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _buildSummaryCard('Receitas', _totalIncome, Colors.green),
+          child: _buildSummaryCard('Receitas', _totalIncome, Colors.green, 14),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _buildSummaryCard('Despesas', _totalExpense, Colors.red),
+          child: _buildSummaryCard('Despesas', _totalExpense, Colors.red, 14),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    double amount,
+    Color color,
+    double titleFontSize,
+  ) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -450,12 +450,12 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(title, style: const TextStyle(fontSize: 16)),
+            Text(title, style: TextStyle(fontSize: titleFontSize)),
             const SizedBox(height: 8),
             Text(
               _isMoneyVisible ? _formatCurrency(amount) : 'R\$ ******',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -526,7 +526,7 @@ class _HomePageState extends State<HomePage> {
             ),
             title: Text(
               transaction.description,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
             ),
             subtitle: Text(DateFormat('dd/MM/yyyy').format(transaction.date)),
             trailing: Row(
@@ -538,15 +538,11 @@ class _HomePageState extends State<HomePage> {
                       : 'R\$ ******',
                   style: TextStyle(
                     color: isIncome ? Colors.green : Colors.red,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(width: 8.0),
                 IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 18,
-                    color: Color.fromARGB(255, 102, 102, 102),
+                  icon: const Icon(Icons.edit, size: 18, color: Color.fromARGB(255, 102, 102, 102),
                   ),
                   onPressed: () => _editTransaction(transaction),
                 ),

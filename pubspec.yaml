@@ -34,3 +34,4 @@ flutter:
     - assets/
     - assets/logologin.png
     - assets/logocerta.png
+    - .env

@@ -145,16 +145,16 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-          _fetchTransactions(startDate: _startDate, endDate: _endDate);
-        });
+      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+    });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-          _fetchTransactions(startDate: _startDate, endDate: _endDate);
-        });
+      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+    });
   }
 
   void _editTransaction(Transaction transaction) {
@@ -186,25 +186,25 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-appBar: AppBar(
-  backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-  toolbarHeight: 80.0,
-  centerTitle: true, // Adicionado para centralizar o título
-  title: Image.asset(
-    'assets/logocerta.png',
-    height: 250,
-    width: 300,
-    fit: BoxFit.contain,
-  ),
-  actions: [
-    IconButton(
-      icon: Icon(
-        _isMoneyVisible ? Icons.visibility : Icons.visibility_off,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        toolbarHeight: 80.0,
+        centerTitle: true,
+        title: Image.asset(
+          'assets/logocerta.png',
+          height: 250,
+          width: 300,
+          fit: BoxFit.contain,
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isMoneyVisible ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: _toggleMoneyVisibility,
+          ),
+        ],
       ),
-      onPressed: _toggleMoneyVisibility,
-    ),
-  ],
-),
       drawer: Drawer(
         child: Column(
           children: [
@@ -305,8 +305,8 @@ appBar: AppBar(
                               try {
                                 final pdfBytes =
                                     await PdfReportGenerator.generateTransactionReport(
-                                      _transactions,
-                                    );
+                                  _transactions,
+                                );
 
                                 await Printing.layoutPdf(
                                   onLayout: (PdfPageFormat format) async =>
@@ -517,11 +517,14 @@ appBar: AppBar(
             borderRadius: BorderRadius.circular(16),
           ),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8.0), // <- AQUI ESTÁ A MUDANÇA
             leading: CircleAvatar(
+              radius: 16.0,
               backgroundColor: isIncome ? Colors.green[100] : Colors.red[100],
               child: Icon(
                 isIncome ? Icons.arrow_upward : Icons.arrow_downward,
                 color: isIncome ? Colors.green : Colors.red,
+                size: 18.0,
               ),
             ),
             title: Text(
@@ -542,7 +545,10 @@ appBar: AppBar(
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.edit, size: 18, color: Color.fromARGB(255, 102, 102, 102),
+                  icon: const Icon(
+                    Icons.edit,
+                    size: 18,
+                    color: Color.fromARGB(255, 102, 102, 102),
                   ),
                   onPressed: () => _editTransaction(transaction),
                 ),

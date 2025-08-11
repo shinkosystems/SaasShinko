@@ -548,13 +548,13 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: const Icon(
                     Icons.edit,
-                    size: 18,
+                    size: 16,
                     color: Color.fromARGB(255, 102, 102, 102),
                   ),
                   onPressed: () => _editTransaction(transaction),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
                   onPressed: () => _deleteTransaction(transaction),
                 ),
               ],

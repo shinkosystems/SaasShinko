@@ -94,7 +94,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
           child: _isSaving
               ? const Center(child: CircularProgressIndicator())
               : FinancialFormWidget(
-                  formTitle: 'Insira os detalhes da Receita',
+                  formTitle: 'Insira os detalhes',
                   buttonText: 'Salvar Receita',
                   titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
                   onSave: (value, description) {

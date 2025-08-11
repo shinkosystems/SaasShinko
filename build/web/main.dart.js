@@ -97579,7 +97579,7 @@ case 2:return A.w(o.at(-1),r)}})
 return A.y($async$As,r)},
 K(a){var s=null,r=A.R(a).ax,q=r.y2
 r=A.ue(s,q==null?r.c:q,s,B.Kt,s)
-return A.wn(r,new A.dD(B.fE,s,s,new A.dY(B.dR,this.e?B.fO:new A.v6(new A.aqO(this),"Insira os detalhes da Despesa","Salvar Despesa",A.R(a).ok.d.kT(18),s),s),s),s)}}
+return A.wn(r,new A.dD(B.fE,s,s,new A.dY(B.dR,this.e?B.fO:new A.v6(new A.aqO(this),"Insira os detalhes","Salvar Despesa",A.R(a).ok.d.kT(18),s),s),s),s)}}
 A.aqM.prototype={
 $0(){this.a.e=!0},
 $S:0}
@@ -97643,7 +97643,7 @@ case 2:return A.w(o.at(-1),r)}})
 return A.y($async$At,r)},
 K(a){var s=null,r=A.R(a).ax,q=r.y2
 r=A.ue(s,q==null?r.c:q,s,B.Kr,s)
-return A.wn(r,new A.dD(B.fE,s,s,new A.dY(B.dR,this.e?B.fO:new A.v6(new A.aqR(this),"Insira os detalhes da Receita","Salvar Receita",A.R(a).ok.d.kT(18),s),s),s),s)}}
+return A.wn(r,new A.dD(B.fE,s,s,new A.dY(B.dR,this.e?B.fO:new A.v6(new A.aqR(this),"Insira os detalhes","Salvar Receita",A.R(a).ok.d.kT(18),s),s),s),s)}}
 A.aqP.prototype={
 $0(){this.a.e=!0},
 $S:0}

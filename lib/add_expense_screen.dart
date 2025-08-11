@@ -94,7 +94,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: _isSaving
               ? const Center(child: CircularProgressIndicator())
               : FinancialFormWidget(
-                  formTitle: 'Insira os detalhes da Despesa',
+                  formTitle: 'Insira os detalhes',
                   buttonText: 'Salvar Despesa',
                   titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
                   onSave: (value, description) {

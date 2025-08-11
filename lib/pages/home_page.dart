@@ -381,11 +381,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const Divider(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         _buildSummaryCards(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         _buildAddButtons(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Center(
                           child: ElevatedButton(
                             onPressed: () async {
@@ -469,7 +469,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const Divider(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -483,7 +483,7 @@ class _HomePageState extends State<HomePage> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 8),
                                 TextButton.icon(
                                   onPressed: () =>
                                       _selectDate(context, isStartDate: true),
@@ -508,7 +508,7 @@ class _HomePageState extends State<HomePage> {
                                           ).format(_endDate!),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 8),
                                 IconButton(
                                   icon: const Icon(
                                     Icons.delete_sweep_outlined,

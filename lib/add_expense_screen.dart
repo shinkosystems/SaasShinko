@@ -96,7 +96,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               : FinancialFormWidget(
                   formTitle: 'Insira os detalhes da Despesa',
                   buttonText: 'Salvar Despesa',
-                  titleStyle: Theme.of(context).textTheme.headlineLarge!,
+                  titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
                   onSave: (value, description) {
                     _saveExpense(value, description);
                   },

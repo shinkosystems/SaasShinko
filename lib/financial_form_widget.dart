@@ -72,6 +72,7 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             style: widget.titleStyle,
             textAlign: TextAlign.center,
           ),
+          const Divider(),
 
           const SizedBox(height: 20),
           TextField(

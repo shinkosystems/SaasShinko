@@ -96,7 +96,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               : FinancialFormWidget(
                   formTitle: 'Insira os detalhes da Receita',
                   buttonText: 'Salvar Receita',
-                  titleStyle: Theme.of(context).textTheme.headlineLarge!,
+                  titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
                   onSave: (value, description) {
                     _saveIncome(value, description);
                   },

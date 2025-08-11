@@ -296,6 +296,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       }
                     },
                   ),
+                  
+                  const Divider(
+                    height: 20,
+                    thickness: 2,
+                    color: Colors.grey,
+                    indent: 20,
+                    endIndent: 20,
+                  ),
                   const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(

@@ -596,7 +596,7 @@ class _HomePageState extends State<HomePage> {
               ),
               title: Text(
                 transaction.description,
-                style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
               ),
               subtitle: Text(
                 DateFormat('dd/MM/yyyy').format(transaction.date),

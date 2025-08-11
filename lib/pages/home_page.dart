@@ -32,8 +32,6 @@ class _HomePageState extends State<HomePage> {
   DateTime? _startDate;
   DateTime? _endDate;
 
-  // Variável de estado para controlar a ordem de ordenação
-  // Inicia como false, que corresponde à ordem decrescente (mais recente primeiro)
   bool _isSortedAscending = false;
 
   @override
@@ -188,7 +186,7 @@ class _HomePageState extends State<HomePage> {
       _startDate = null;
       _endDate = null;
     });
-    _fetchTransactions(); // Busca todas as transações novamente
+    _fetchTransactions();
   }
 
   void _addIncome() {
@@ -214,16 +212,20 @@ class _HomePageState extends State<HomePage> {
   void _editTransaction(Transaction transaction) {
     Navigator.of(context)
         .push(
-          MaterialPageRoute(
-            builder: (context) =>
-                TransactionDetailScreen(transaction: transaction),
-          ),
-        )
+      MaterialPageRoute(
+        builder: (context) =>
+            TransactionDetailScreen(transaction: transaction),
+      ),
+    )
         .then((shouldRefresh) {
-          if (shouldRefresh == true) {
-            _fetchTransactions(startDate: _startDate, endDate: _endDate);
-          }
+      if (shouldRefresh == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      } else {
+        setState(() {
+          // Apenas redesenha a tela para que o Dismissible seja desfeito
         });
+      }
+    });
   }
 
   String _formatCurrency(double amount) {
@@ -436,8 +438,8 @@ class _HomePageState extends State<HomePage> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF025928),
-                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF8BD9BC),
+                              foregroundColor: const Color.fromARGB(255, 0, 0, 0),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                                 vertical: 12,
@@ -640,24 +642,38 @@ class _HomePageState extends State<HomePage> {
 
         return Dismissible(
           key: Key(transaction.id),
+          direction: DismissDirection.horizontal,
           background: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
+            borderRadius: BorderRadius.circular(16),
             child: Container(
-              color: const Color.fromARGB(214, 211, 15, 15),
+              color: const Color.fromARGB(255, 46, 155, 182),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: const Icon(Icons.edit, color: Colors.white),
+            ),
+          ),
+          secondaryBackground: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              color: const Color.fromARGB(213, 190, 60, 60),
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: const Icon(Icons.delete, color: Colors.white),
             ),
           ),
-          direction: DismissDirection.endToStart,
           confirmDismiss: (direction) async {
-            return await _showDeleteConfirmationDialog();
+            if (direction == DismissDirection.endToStart) {
+              return await _showDeleteConfirmationDialog();
+            } else if (direction == DismissDirection.startToEnd) {
+              _editTransaction(transaction);
+              return false;
+            }
+            return false;
           },
           onDismissed: (direction) {
-            _performDeleteTransaction(transaction);
+            if (direction == DismissDirection.endToStart) {
+              _performDeleteTransaction(transaction);
+            }
           },
           child: Card(
             margin: const EdgeInsets.only(bottom: 8.0),
@@ -665,19 +681,30 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.only(left: 8.0, right: 2.0),
+              // Mantém a funcionalidade de edição quando o ListTile é clicado
+              onTap: () => _editTransaction(transaction),
+              contentPadding: const EdgeInsets.only(left: 8.0, right: 8.0),
               leading: CircleAvatar(
                 radius: 18.0,
-                backgroundColor: transaction.type == TransactionType.income ? Colors.green.shade100 : Colors.red.shade100,
+                backgroundColor: transaction.type == TransactionType.income
+                    ? Colors.green.shade100
+                    : Colors.red.shade100,
                 child: Icon(
-                  transaction.type == TransactionType.income ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: transaction.type == TransactionType.income ? Colors.green : Colors.red,
+                  transaction.type == TransactionType.income
+                      ? Icons.arrow_upward
+                      : Icons.arrow_downward,
+                  color: transaction.type == TransactionType.income
+                      ? Colors.green
+                      : Colors.red,
                   size: 18.0,
                 ),
               ),
               title: Text(
                 transaction.description,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               subtitle: Text(
                 DateFormat('dd/MM/yyyy').format(transaction.date),
@@ -691,17 +718,11 @@ class _HomePageState extends State<HomePage> {
                         ? _formatCurrency(transaction.value)
                         : 'R\$ ******',
                     style: TextStyle(
-                      color: transaction.type == TransactionType.income ? Colors.green : Colors.red,
-                      fontSize: 10,
+                      color: transaction.type == TransactionType.income
+                          ? Colors.green
+                          : Colors.red,
+                      fontSize: 12,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.edit,
-                      size: 16,
-                      color: Color.fromARGB(255, 102, 102, 102),
-                    ),
-                    onPressed: () => _editTransaction(transaction),
                   ),
                 ],
               ),

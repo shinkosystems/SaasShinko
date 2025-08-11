@@ -468,8 +468,8 @@ class _UserPageState extends State<UserPage> {
                         icon: const Icon(Icons.lock_reset),
                         label: const Text('Trocar Senha'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF025928),
-                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFF8BD9BC),
+                          foregroundColor: const Color.fromARGB(255, 3, 3, 3),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 12,

@@ -145,16 +145,16 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
-    });
+          _fetchTransactions(startDate: _startDate, endDate: _endDate);
+        });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
-    });
+          _fetchTransactions(startDate: _startDate, endDate: _endDate);
+        });
   }
 
   void _editTransaction(Transaction transaction) {
@@ -305,8 +305,8 @@ class _HomePageState extends State<HomePage> {
                               try {
                                 final pdfBytes =
                                     await PdfReportGenerator.generateTransactionReport(
-                                  _transactions,
-                                );
+                                      _transactions,
+                                    );
 
                                 await Printing.layoutPdf(
                                   onLayout: (PdfPageFormat format) async =>
@@ -422,9 +422,7 @@ class _HomePageState extends State<HomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        Expanded(
-          child: _buildSummaryCard('Saldo', _balance, Colors.blue, 14),
-        ),
+        Expanded(child: _buildSummaryCard('Saldo', _balance, Colors.blue, 14)),
         const SizedBox(width: 16),
         Expanded(
           child: _buildSummaryCard('Receitas', _totalIncome, Colors.green, 14),
@@ -533,9 +531,7 @@ class _HomePageState extends State<HomePage> {
             ),
             subtitle: Text(
               DateFormat('dd/MM/yyyy').format(transaction.date),
-              style: const TextStyle(
-                fontSize: 10
-              )
+              style: const TextStyle(fontSize: 10),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

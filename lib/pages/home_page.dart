@@ -145,16 +145,16 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-          _fetchTransactions(startDate: _startDate, endDate: _endDate);
-        });
+      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+    });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-          _fetchTransactions(startDate: _startDate, endDate: _endDate);
-        });
+      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+    });
   }
 
   void _editTransaction(Transaction transaction) {
@@ -181,6 +181,55 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _isMoneyVisible = !_isMoneyVisible;
     });
+  }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Exclusão'),
+          content: const Text('Tem certeza que deseja excluir esta transação?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirm ?? false;
+  }
+
+  void _performDeleteTransaction(Transaction transaction) async {
+    try {
+      await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transaction.id)
+          .eq('user_id', userId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transação excluída com sucesso!')),
+        );
+        setState(() {
+          _transactions.removeWhere((item) => item.id == transaction.id);
+        });
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir transação: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -305,8 +354,8 @@ class _HomePageState extends State<HomePage> {
                               try {
                                 final pdfBytes =
                                     await PdfReportGenerator.generateTransactionReport(
-                                      _transactions,
-                                    );
+                                  _transactions,
+                                );
 
                                 await Printing.layoutPdf(
                                   onLayout: (PdfPageFormat format) async =>
@@ -506,107 +555,87 @@ class _HomePageState extends State<HomePage> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _transactions.length,
       itemBuilder: (context, index) {
-        final transaction = _transactions[index];
-        final isIncome = transaction.type == TransactionType.income;
+        final transaction = _transactions.reversed.toList()[index]; // Inverte a ordem aqui para o swipe funcionar corretamente com a lista invertida
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        return Dismissible(
+          key: Key(transaction.id),
+          background: ClipRRect(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            child: Container(
+              color:Color.fromARGB(214, 211, 15, 15),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.only(left: 8.0, right: 0.0),
-            leading: CircleAvatar(
-              radius: 16.0,
-              backgroundColor: isIncome ? Colors.green[100] : Colors.red[100],
-              child: Icon(
-                isIncome ? Icons.arrow_upward : Icons.arrow_downward,
-                color: isIncome ? Colors.green : Colors.red,
-                size: 18.0,
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (direction) async {
+            return await _showDeleteConfirmationDialog();
+          },
+          onDismissed: (direction) {
+            _performDeleteTransaction(transaction);
+          },
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 8.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.only(left: 8.0, right: 0.0),
+              leading: CircleAvatar(
+                radius: 16.0,
+                backgroundColor: transaction.type == TransactionType.income ? Colors.green.shade100 : Colors.red.shade100,
+                child: Icon(
+                  transaction.type == TransactionType.income ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: transaction.type == TransactionType.income ? Colors.green : Colors.red,
+                  size: 18.0,
+                ),
+              ),
+              title: Text(
+                transaction.description,
+                style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                DateFormat('dd/MM/yyyy').format(transaction.date),
+                style: const TextStyle(fontSize: 10),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _isMoneyVisible
+                        ? _formatCurrency(transaction.value)
+                        : 'R\$ ******',
+                    style: TextStyle(
+                      color: transaction.type == TransactionType.income ? Colors.green : Colors.red,
+                      fontSize: 10,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit,
+                      size: 16,
+                      color: Color.fromARGB(255, 102, 102, 102),
+                    ),
+                    onPressed: () => _editTransaction(transaction),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                    onPressed: () async {
+                      if (await _showDeleteConfirmationDialog() == true) {
+                        _performDeleteTransaction(transaction);
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
-            title: Text(
-              transaction.description,
-              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              DateFormat('dd/MM/yyyy').format(transaction.date),
-              style: const TextStyle(fontSize: 10),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _isMoneyVisible
-                      ? _formatCurrency(transaction.value)
-                      : 'R\$ ******',
-                  style: TextStyle(
-                    color: isIncome ? Colors.green : Colors.red,
-                    fontSize: 10,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Color.fromARGB(255, 102, 102, 102),
-                  ),
-                  onPressed: () => _editTransaction(transaction),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                  onPressed: () => _deleteTransaction(transaction),
-                ),
-              ],
-            ),
           ),
         );
       },
     );
-  }
-
-  void _deleteTransaction(Transaction transaction) async {
-    final bool? confirm = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmar Exclusão'),
-          content: const Text('Tem certeza que deseja excluir esta transação?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm == true) {
-      try {
-        await supabase
-            .from('transactions')
-            .delete()
-            .eq('id', transaction.id)
-            .eq('user_id', userId);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transação excluída com sucesso!')),
-          );
-          _fetchTransactions(startDate: _startDate, endDate: _endDate);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao excluir transação: $e')),
-          );
-        }
-      }
-    }
   }
 }

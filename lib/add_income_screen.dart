@@ -19,7 +19,6 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     super.dispose();
   }
 
-  // ATUALIZADO: O método _saveIncome agora recebe a data como parâmetro
   Future<void> _saveIncome(
       double value, String description, DateTime date) async {
     setState(() {
@@ -27,28 +26,26 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     });
 
     try {
-      // 1. Obter o ID do usuário logado
       final User? user = supabase.auth.currentUser;
       if (user == null) {
-        print('Nenhum usuário logado. Não é possível salvar a receita.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Erro: Usuário não logado.')),
           );
-          Navigator.pop(context); // Volta se não houver usuário logado
+          // Retorna `false` se não houver usuário logado
+          Navigator.pop(context, false);
         }
         return;
       }
 
       final transactionData = Transaction(
-        id: '', // Supabase irá gerar o ID automaticamente
+        id: '',
         description: description,
         value: value,
-        date: date, // ATUALIZADO: Usa a data recebida como parâmetro
+        date: date,
         type: TransactionType.income,
       ).toJson();
 
-      // 2. Adicionar o user_id ao transactionData
       transactionData['user_id'] = user.id;
 
       await supabase.from('transactions').insert(transactionData);
@@ -57,21 +54,24 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Receita salva com sucesso!')),
         );
-        Navigator.pop(context);
+        // Retorna `true` se a transação foi salva com sucesso
+        Navigator.pop(context, true);
       }
     } on PostgrestException catch (e) {
-      print('Erro ao salvar receita no Supabase: ${e.message}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao salvar receita: ${e.message}')),
         );
+        // Retorna `false` em caso de erro na API
+        Navigator.pop(context, false);
       }
     } catch (e) {
-      print('Erro inesperado ao salvar receita: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro inesperado ao salvar receita.')),
         );
+        // Retorna `false` em caso de erro inesperado
+        Navigator.pop(context, false);
       }
     } finally {
       if (mounted) {

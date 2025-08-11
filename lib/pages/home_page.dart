@@ -64,7 +64,6 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _userName = response['username'] as String?;
-          print('Nome do usuário buscado: $_userName');
         });
       }
     } catch (e) {
@@ -354,14 +353,15 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -391,7 +391,6 @@ class _HomePageState extends State<HomePage> {
                         Center(
                           child: ElevatedButton(
                             onPressed: () async {
-                              print('Ver Relatórios Clicando!');
                               if (_transactions.isEmpty) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -425,7 +424,6 @@ class _HomePageState extends State<HomePage> {
                                   );
                                 }
                               } catch (e) {
-                                print('ERRO ao gerar/visualizar PDF: $e');
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -491,51 +489,42 @@ class _HomePageState extends State<HomePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'Período:',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton.icon(
-                                  onPressed: () =>
-                                      _selectDate(context, isStartDate: true),
-                                  icon: const Icon(Icons.calendar_today, size: 16),
-                                  label: Text(
-                                    _startDate == null
-                                        ? 'Data Inicial'
-                                        : DateFormat(
-                                              'dd/MM/yyyy',
-                                            ).format(_startDate!),
-                                  ),
-                                ),
-                                TextButton.icon(
-                                  onPressed: () =>
-                                      _selectDate(context, isStartDate: false),
-                                  icon: const Icon(Icons.calendar_today, size: 16),
-                                  label: Text(
-                                    _endDate == null
-                                        ? 'Data Final'
-                                        : DateFormat(
-                                              'dd/MM/yyyy',
-                                            ).format(_endDate!),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_sweep_outlined,
-                                    color: Color(0xFF2C735F),
-                                  ),
-                                  onPressed: _clearDateFilters,
-                                  tooltip: 'Limpar Filtros de Data',
-                                ),
-                              ],
+                            const Text(
+                              'Período:',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              onPressed: () =>
+                                  _selectDate(context, isStartDate: true),
+                              icon: const Icon(Icons.calendar_today, size: 16),
+                              label: Text(
+                                _startDate == null
+                                    ? 'Data Inicial'
+                                    : DateFormat('dd/MM/yyyy').format(_startDate!),
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: () =>
+                                  _selectDate(context, isStartDate: false),
+                              icon: const Icon(Icons.calendar_today, size: 16),
+                              label: Text(
+                                _endDate == null
+                                    ? 'Data Final'
+                                    : DateFormat('dd/MM/yyyy').format(_endDate!),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_sweep_outlined,
+                                color: Color(0xFF2C735F),
+                              ),
+                              onPressed: _clearDateFilters,
+                              tooltip: 'Limpar Filtros de Data',
                             ),
                           ],
                         ),
@@ -545,8 +534,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-        ),
-      ),
+              ),
+            ),
     );
   }
 
@@ -681,7 +670,6 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: ListTile(
-              // Mantém a funcionalidade de edição quando o ListTile é clicado
               onTap: () => _editTransaction(transaction),
               contentPadding: const EdgeInsets.only(left: 8.0, right: 8.0),
               leading: CircleAvatar(

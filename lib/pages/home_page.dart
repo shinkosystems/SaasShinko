@@ -459,14 +459,30 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 24),
                         const Divider(),
-                        const Center(
-                          child: Text(
-                            'Transações Cadastradas',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Spacer(),
+                            const Text(
+                              'Transações Cadastradas',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
+                            const Spacer(),
+                            IconButton(
+                              icon: Icon(
+                                _isSortedAscending
+                                    ? Icons.arrow_upward
+                                    : Icons.arrow_downward,
+                              ),
+                              onPressed: _toggleSortOrder,
+                              tooltip: _isSortedAscending
+                                  ? 'Ordenar por mais recente'
+                                  : 'Ordenar por mais antigo',
+                            ),
+                          ],
                         ),
                         const Divider(),
                         const SizedBox(height: 16),
@@ -477,7 +493,7 @@ class _HomePageState extends State<HomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Text(
-                                  'Ordenar:',
+                                  'Período:',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -492,8 +508,8 @@ class _HomePageState extends State<HomePage> {
                                     _startDate == null
                                         ? 'Data Inicial'
                                         : DateFormat(
-                                            'dd/MM/yyyy',
-                                          ).format(_startDate!),
+                                              'dd/MM/yyyy',
+                                            ).format(_startDate!),
                                   ),
                                 ),
                                 TextButton.icon(
@@ -504,8 +520,8 @@ class _HomePageState extends State<HomePage> {
                                     _endDate == null
                                         ? 'Data Final'
                                         : DateFormat(
-                                            'dd/MM/yyyy',
-                                          ).format(_endDate!),
+                                              'dd/MM/yyyy',
+                                            ).format(_endDate!),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -518,17 +534,6 @@ class _HomePageState extends State<HomePage> {
                                   tooltip: 'Limpar Filtros de Data',
                                 ),
                               ],
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                _isSortedAscending
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                              ),
-                              onPressed: _toggleSortOrder,
-                              tooltip: _isSortedAscending
-                                  ? 'Ordenar por mais recente'
-                                  : 'Ordenar por mais antigo',
                             ),
                           ],
                         ),

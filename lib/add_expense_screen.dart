@@ -19,7 +19,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     super.dispose();
   }
 
-  Future<void> _saveExpense(double value, String description) async {
+  // ATUALIZADO: O método _saveExpense agora recebe a data como parâmetro
+  Future<void> _saveExpense(
+      double value, String description, DateTime date) async {
     setState(() {
       _isSaving = true;
     });
@@ -42,7 +44,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         id: '', // Supabase irá gerar o ID automaticamente
         description: description,
         value: value,
-        date: DateTime.now(),
+        date: date, // ATUALIZADO: Usa a data recebida como parâmetro
         type: TransactionType.expense,
       ).toJson();
 
@@ -68,7 +70,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       print('Erro inesperado ao salvar despesa: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro inesperado ao salvar despesa.')),
+          const SnackBar(content: Text('Erro inesperado ao salvar despesa.')),
         );
       }
     } finally {
@@ -87,8 +89,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         title: const Text('Adicionar Despesa'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Align( // Alterado de Center para Align
-        alignment: Alignment.topCenter, // Alinha ao topo e centraliza horizontalmente
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
           child: _isSaving
@@ -96,9 +98,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               : FinancialFormWidget(
                   formTitle: 'Insira os detalhes',
                   buttonText: 'Salvar Despesa',
-                  titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
-                  onSave: (value, description) {
-                    _saveExpense(value, description);
+                  titleStyle: Theme.of(context)
+                      .textTheme
+                      .headlineLarge!
+                      .copyWith(fontSize: 18, fontWeight: FontWeight.w600),
+                  onSave: (value, description, date) {
+                    _saveExpense(value, description, date);
                   },
                 ),
         ),

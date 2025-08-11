@@ -19,7 +19,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     super.dispose();
   }
 
-  Future<void> _saveIncome(double value, String description) async {
+  // ATUALIZADO: O método _saveIncome agora recebe a data como parâmetro
+  Future<void> _saveIncome(
+      double value, String description, DateTime date) async {
     setState(() {
       _isSaving = true;
     });
@@ -42,7 +44,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         id: '', // Supabase irá gerar o ID automaticamente
         description: description,
         value: value,
-        date: DateTime.now(),
+        date: date, // ATUALIZADO: Usa a data recebida como parâmetro
         type: TransactionType.income,
       ).toJson();
 
@@ -68,7 +70,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       print('Erro inesperado ao salvar receita: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro inesperado ao salvar receita.')),
+          const SnackBar(content: Text('Erro inesperado ao salvar receita.')),
         );
       }
     } finally {
@@ -87,8 +89,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         title: const Text('Adicionar Receita'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Align( // Alterado de Center para Align
-        alignment: Alignment.topCenter, // Alinha ao topo e centraliza horizontalmente
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
           child: _isSaving
@@ -96,9 +98,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               : FinancialFormWidget(
                   formTitle: 'Insira os detalhes',
                   buttonText: 'Salvar Receita',
-                  titleStyle: Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18),
-                  onSave: (value, description) {
-                    _saveIncome(value, description);
+                  titleStyle:
+                      Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18, fontWeight: FontWeight.w600),
+                  onSave: (value, description, date) {
+                    _saveIncome(value, description, date);
                   },
                 ),
         ),

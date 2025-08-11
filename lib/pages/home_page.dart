@@ -32,6 +32,10 @@ class _HomePageState extends State<HomePage> {
   DateTime? _startDate;
   DateTime? _endDate;
 
+  // Variável de estado para controlar a ordem de ordenação
+  // Inicia como false, que corresponde à ordem decrescente (mais recente primeiro)
+  bool _isSortedAscending = false;
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +83,9 @@ class _HomePageState extends State<HomePage> {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       var query = supabase.from('transactions').select().eq('user_id', userId);
 
@@ -89,8 +96,8 @@ class _HomePageState extends State<HomePage> {
         final nextDay = endDate.add(const Duration(days: 1));
         query = query.lt('date', nextDay.toIso8601String());
       }
-
-      final response = await query.order('date', ascending: false);
+      
+      final response = await query.order('date', ascending: _isSortedAscending);
 
       if (mounted) {
         setState(() {
@@ -116,7 +123,20 @@ class _HomePageState extends State<HomePage> {
           context,
         ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+  
+  void _toggleSortOrder() {
+    setState(() {
+      _isSortedAscending = !_isSortedAscending;
+    });
+    _fetchTransactions(startDate: _startDate, endDate: _endDate);
   }
 
   Future<void> _selectDate(
@@ -125,27 +145,59 @@ class _HomePageState extends State<HomePage> {
   }) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: (isStartDate ? _startDate : _endDate) ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
     if (picked != null) {
-      setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
+      if (isStartDate) {
+        if (_endDate != null && picked.isAfter(_endDate!)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A data inicial não pode ser depois da data final.'),
+              ),
+            );
+          }
+          return;
         }
-      });
+        setState(() {
+          _startDate = picked;
+        });
+      } else {
+        if (_startDate != null && picked.isBefore(_startDate!)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A data final não pode ser antes da data inicial.'),
+              ),
+            );
+          }
+          return;
+        }
+        setState(() {
+          _endDate = picked;
+        });
+      }
       _fetchTransactions(startDate: _startDate, endDate: _endDate);
     }
+  }
+
+  void _clearDateFilters() {
+    setState(() {
+      _startDate = null;
+      _endDate = null;
+    });
+    _fetchTransactions(); // Busca todas as transações novamente
   }
 
   void _addIncome() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      if (value == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      }
     });
   }
 
@@ -153,7 +205,9 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-      _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      if (value == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      }
     });
   }
 
@@ -218,9 +272,6 @@ class _HomePageState extends State<HomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Transação excluída com sucesso!')),
         );
-        setState(() {
-          _transactions.removeWhere((item) => item.id == transaction.id);
-        });
         _fetchTransactions(startDate: _startDate, endDate: _endDate);
       }
     } catch (e) {
@@ -320,7 +371,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const Divider(),
-                        const SizedBox(height: 8),
                         const Center(
                           child: Text(
                             'Visão Geral',
@@ -330,6 +380,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
+                        const Divider(),
                         const SizedBox(height: 24),
                         _buildSummaryCards(),
                         const SizedBox(height: 24),
@@ -407,54 +458,79 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 24),
+                        const Divider(),
                         const Center(
                           child: Text(
-                            'Filtrar por período',
+                            'Transações Cadastradas',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 24),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            TextButton.icon(
-                              onPressed: () =>
-                                  _selectDate(context, isStartDate: true),
-                              icon: const Icon(Icons.calendar_today, size: 16),
-                              label: Text(
-                                _startDate == null
-                                    ? 'Data Inicial'
-                                    : DateFormat(
-                                        'dd/MM/yyyy',
-                                      ).format(_startDate!),
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Ordenar por período:',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      _selectDate(context, isStartDate: true),
+                                  icon: const Icon(Icons.calendar_today, size: 16),
+                                  label: Text(
+                                    _startDate == null
+                                        ? 'Data Inicial'
+                                        : DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(_startDate!),
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      _selectDate(context, isStartDate: false),
+                                  icon: const Icon(Icons.calendar_today, size: 16),
+                                  label: Text(
+                                    _endDate == null
+                                        ? 'Data Final'
+                                        : DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(_endDate!),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_sweep_outlined,
+                                    color: Color(0xFF2C735F),
+                                  ),
+                                  onPressed: _clearDateFilters,
+                                  tooltip: 'Limpar Filtros de Data',
+                                ),
+                              ],
                             ),
-                            TextButton.icon(
-                              onPressed: () =>
-                                  _selectDate(context, isStartDate: false),
-                              icon: const Icon(Icons.calendar_today, size: 16),
-                              label: Text(
-                                _endDate == null
-                                    ? 'Data Final'
-                                    : DateFormat(
-                                        'dd/MM/yyyy',
-                                      ).format(_endDate!),
+                            IconButton(
+                              icon: Icon(
+                                _isSortedAscending
+                                    ? Icons.arrow_upward
+                                    : Icons.arrow_downward,
                               ),
+                              onPressed: _toggleSortOrder,
+                              tooltip: _isSortedAscending
+                                  ? 'Ordenar por mais recente'
+                                  : 'Ordenar por mais antigo',
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 24),
-                        const Center(
-                          child: Text(
-                            'Últimas Transações',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ),
                         const SizedBox(height: 16),
                         _buildTransactionList(),
@@ -555,17 +631,17 @@ class _HomePageState extends State<HomePage> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _transactions.length,
       itemBuilder: (context, index) {
-        final transaction = _transactions.reversed.toList()[index]; // Inverte a ordem aqui para o swipe funcionar corretamente com a lista invertida
+        final transaction = _transactions[index];
 
         return Dismissible(
           key: Key(transaction.id),
           background: ClipRRect(
-            borderRadius:  const BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               topRight: Radius.circular(16),
               bottomRight: Radius.circular(16),
             ),
             child: Container(
-              color:Color.fromARGB(214, 211, 15, 15),
+              color: const Color.fromARGB(214, 211, 15, 15),
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: const Icon(Icons.delete, color: Colors.white),
@@ -622,15 +698,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onPressed: () => _editTransaction(transaction),
                   ),
-                  // BOTÃO DE LIXEIRA JÁ FUNCIONAL SE PRECISARMOS VOLTAR COM ELE PRO APP
-                  // IconButton(
-                  //   icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                  //   onPressed: () async {
-                  //     if (await _showDeleteConfirmationDialog() == true) {
-                  //       _performDeleteTransaction(transaction);
-                  //     }
-                  //   },
-                  // ),
                 ],
               ),
             ),

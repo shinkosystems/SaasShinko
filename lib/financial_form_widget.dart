@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Importação necessária para formatar a data
 
 class FinancialFormWidget extends StatefulWidget {
-  final Function(double value, String description) onSave;
-  final String formTitle; // Para diferenciar Receita/Despesa no título
-  final String buttonText; // Para diferenciar o texto do botão
-  final TextStyle titleStyle; // <--- NOVA PROPRIEDADE AQUI!
+  // ATUALIZADO: O callback onSave agora também recebe a data
+  final Function(double value, String description, DateTime date) onSave;
+  final String formTitle;
+  final String buttonText;
+  final TextStyle titleStyle;
 
   const FinancialFormWidget({
     super.key,
     required this.onSave,
     required this.formTitle,
     required this.buttonText,
-    required this.titleStyle, // <--- ADICIONE AO CONSTRUTOR
+    required this.titleStyle,
   });
 
   @override
@@ -21,12 +23,30 @@ class FinancialFormWidget extends StatefulWidget {
 class _FinancialFormWidgetState extends State<FinancialFormWidget> {
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  
+  // NOVO: Adiciona uma variável de estado para armazenar a data, com valor inicial do dia atual
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
     _valueController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  // NOVO: Método para exibir o seletor de data
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
   }
 
   void _saveTransaction() {
@@ -44,12 +64,15 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
       return;
     }
 
-    // Se tudo estiver OK, chame o callback para a tela pai
-    widget.onSave(value, description);
+    // ATUALIZADO: Passa a data selecionada no callback
+    widget.onSave(value, description, _selectedDate);
 
-    // Opcional: Limpar os campos após salvar
+    // Opcional: Limpar os campos após salvar e resetar a data para hoje
     _valueController.clear();
     _descriptionController.clear();
+    setState(() {
+      _selectedDate = DateTime.now();
+    });
   }
 
   void _showSnackBar(String message) {
@@ -68,7 +91,7 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            widget.formTitle, // Usa o título passado pelo construtor
+            widget.formTitle,
             style: widget.titleStyle,
             textAlign: TextAlign.center,
           ),
@@ -80,9 +103,9 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               border: UnderlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-              labelText: 'Valor', // Genérico
+                borderRadius: BorderRadius.circular(16),
+              ),
+              labelText: 'Valor',
               prefixText: 'R\$ ',
               hintText: 'Ex: 1500.00',
             ),
@@ -93,12 +116,21 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             controller: _descriptionController,
             decoration: InputDecoration(
               border: UnderlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-              labelText: 'Descrição', // Genérico
+                borderRadius: BorderRadius.circular(16),
+              ),
+              labelText: 'Descrição',
               hintText: 'Ex: Salário, Venda de Produto, Freela',
             ),
             maxLines: 2,
+          ),
+
+          // NOVO: Adiciona um seletor de data
+          const SizedBox(height: 20),
+          ListTile(
+            title: const Text('Data da Transação'),
+            subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () => _selectDate(context),
           ),
 
           const SizedBox(height: 30),

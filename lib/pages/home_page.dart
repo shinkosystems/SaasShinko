@@ -560,7 +560,7 @@ class _HomePageState extends State<HomePage> {
         return Dismissible(
           key: Key(transaction.id),
           background: ClipRRect(
-            borderRadius: BorderRadius.only(
+            borderRadius:  const BorderRadius.only(
               topRight: Radius.circular(16),
               bottomRight: Radius.circular(16),
             ),
@@ -584,9 +584,9 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.only(left: 8.0, right: 0.0),
+              contentPadding: const EdgeInsets.only(left: 8.0, right: 2.0),
               leading: CircleAvatar(
-                radius: 16.0,
+                radius: 18.0,
                 backgroundColor: transaction.type == TransactionType.income ? Colors.green.shade100 : Colors.red.shade100,
                 child: Icon(
                   transaction.type == TransactionType.income ? Icons.arrow_upward : Icons.arrow_downward,
@@ -622,14 +622,15 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onPressed: () => _editTransaction(transaction),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                    onPressed: () async {
-                      if (await _showDeleteConfirmationDialog() == true) {
-                        _performDeleteTransaction(transaction);
-                      }
-                    },
-                  ),
+                  // BOTÃO DE LIXEIRA JÁ FUNCIONAL SE PRECISARMOS VOLTAR COM ELE PRO APP
+                  // IconButton(
+                  //   icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                  //   onPressed: () async {
+                  //     if (await _showDeleteConfirmationDialog() == true) {
+                  //       _performDeleteTransaction(transaction);
+                  //     }
+                  //   },
+                  // ),
                 ],
               ),
             ),

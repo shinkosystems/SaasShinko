@@ -423,7 +423,7 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         Expanded(
-          child: _buildSummaryCard('Saldo Atual', _balance, Colors.blue, 14),
+          child: _buildSummaryCard('Saldo', _balance, Colors.blue, 14),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -517,7 +517,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8.0), // <- AQUI ESTÁ A MUDANÇA
+            contentPadding: const EdgeInsets.only(left: 8.0, right: 0.0),
             leading: CircleAvatar(
               radius: 16.0,
               backgroundColor: isIncome ? Colors.green[100] : Colors.red[100],
@@ -531,7 +531,12 @@ class _HomePageState extends State<HomePage> {
               transaction.description,
               style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(DateFormat('dd/MM/yyyy').format(transaction.date)),
+            subtitle: Text(
+              DateFormat('dd/MM/yyyy').format(transaction.date),
+              style: const TextStyle(
+                fontSize: 10
+              )
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -541,7 +546,7 @@ class _HomePageState extends State<HomePage> {
                       : 'R\$ ******',
                   style: TextStyle(
                     color: isIncome ? Colors.green : Colors.red,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
                 IconButton(

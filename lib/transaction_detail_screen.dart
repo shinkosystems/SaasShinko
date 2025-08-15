@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
+import 'package:saas_gestao_financeira_backup/ad_banner.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
@@ -296,7 +297,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       }
                     },
                   ),
-                  
                   const Divider(
                     height: 20,
                     thickness: 2,
@@ -316,6 +316,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       child: const Text('Salvar Alterações'),
                     ),
                   ),
+                  const SizedBox(height: 20), // Espaçamento entre o botão e o banner
+                  const Center(child: AdBanner()), // Adicionado o banner aqui
                 ],
               ),
             ),

@@ -10,6 +10,7 @@ import 'package:saas_gestao_financeira_backup/pdf_report_generator.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira_backup/transaction_detail_screen.dart';
+import 'package:saas_gestao_financeira_backup/ad_banner.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -365,11 +366,17 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Que bom te ver por aqui, ${_userName ?? '[username]'}!',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        // Adicionando o banner de publicidade no topo da coluna
+                        const Center (child:AdBanner()), 
+                        const SizedBox(height: 16,),
+                       Center(
+                          child: Text(
+                            'Que bom te ver por aqui, ${_userName ?? '[username]'}!',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const Divider(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:saas_gestao_financeira_backup/financial_form_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
+import 'package:saas_gestao_financeira_backup/ad_banner.dart';
 
 class AddIncomeScreen extends StatefulWidget {
   const AddIncomeScreen({super.key});
@@ -95,14 +96,25 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
           constraints: const BoxConstraints(maxWidth: 900),
           child: _isSaving
               ? const Center(child: CircularProgressIndicator())
-              : FinancialFormWidget(
-                  formTitle: 'Insira os detalhes',
-                  buttonText: 'Salvar Receita',
-                  titleStyle:
-                      Theme.of(context).textTheme.headlineLarge!.copyWith(fontSize: 18, fontWeight: FontWeight.w600),
-                  onSave: (value, description, date) {
-                    _saveIncome(value, description, date);
-                  },
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      FinancialFormWidget(
+                        formTitle: 'Insira os detalhes',
+                        buttonText: 'Salvar Receita',
+                        titleStyle:
+                            Theme.of(context).textTheme.headlineLarge!.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                        onSave: (value, description, date) {
+                          _saveIncome(value, description, date);
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      const Center(child: AdBanner()),
+                    ],
+                  ),
                 ),
         ),
       ),

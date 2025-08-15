@@ -3,14 +3,22 @@ import 'package:saas_gestao_financeira_backup/pages/home_page.dart';
 import 'package:saas_gestao_financeira_backup/pages/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:intl/date_symbol_data_local.dart'; // 1. NOVO: Adicione esta importação
-
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Adicione esta linha
+import 'dart:io' show Platform; // Mantenha esta linha
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (!kIsWeb) {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await MobileAds.instance.initialize();
+    }
+  }
+
   await dotenv.load(fileName: ".env"); // Carregue as variáveis do .env
 
-  // 2. NOVO: Inicializa os dados de formatação de data para o locale pt_BR
   await initializeDateFormatting('pt_BR', null);
 
   await Supabase.initialize(

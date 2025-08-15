@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:saas_gestao_financeira_backup/ad_banner.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -413,6 +414,7 @@ class _UserPageState extends State<UserPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      const SizedBox(height: 20),
                       GestureDetector(
                         onTap: _pickAndUploadImage,
                         child: CircleAvatar(
@@ -420,28 +422,28 @@ class _UserPageState extends State<UserPage> {
                           backgroundColor: Colors.grey[200],
                           backgroundImage:
                               _avatarUrl != null && _avatarUrl!.isNotEmpty
-                              ? (() {
-                                  final imageUrl = supabase.storage
-                                      .from('avatars')
-                                      .getPublicUrl(_avatarUrl!);
-                                  print(
-                                    'DEBUG: Tentando carregar imagem da URL: $imageUrl',
-                                  );
-                                  return NetworkImage(imageUrl)
-                                      as ImageProvider<Object>?;
-                                })()
-                              : (_profileImage != null
-                                    ? FileImage(_profileImage!)
-                                    : null),
+                                  ? (() {
+                                      final imageUrl = supabase.storage
+                                          .from('avatars')
+                                          .getPublicUrl(_avatarUrl!);
+                                      print(
+                                        'DEBUG: Tentando carregar imagem da URL: $imageUrl',
+                                      );
+                                      return NetworkImage(imageUrl)
+                                          as ImageProvider<Object>?;
+                                    })()
+                                  : (_profileImage != null
+                                      ? FileImage(_profileImage!)
+                                      : null),
                           child:
                               (_avatarUrl == null || _avatarUrl!.isEmpty) &&
-                                  _profileImage == null
-                              ? Icon(
-                                  Icons.camera_alt,
-                                  size: 40,
-                                  color: Colors.grey[700],
-                                )
-                              : null,
+                                      _profileImage == null
+                                  ? Icon(
+                                      Icons.camera_alt,
+                                      size: 40,
+                                      color: Colors.grey[700],
+                                    )
+                                  : null,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -480,6 +482,7 @@ class _UserPageState extends State<UserPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      const Center(child: AdBanner()),
                     ],
                   ),
                 ),

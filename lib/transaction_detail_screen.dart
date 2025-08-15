@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
 import 'package:saas_gestao_financeira_backup/ad_banner.dart';
+import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
@@ -24,6 +25,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   late TransactionType _selectedType;
   late DateTime _selectedDate;
 
+  final AdInterstitial _adManager = AdInterstitial();
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +38,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
     _selectedType = widget.transaction.type;
     _selectedDate = widget.transaction.date;
+    _adManager.loadAd();
   }
 
   @override
@@ -42,6 +46,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     _descriptionController.dispose();
     _valueController.dispose();
     super.dispose();
+  }
+
+  void _onAdClosedAndNavigate() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transação atualizada com sucesso!')),
+      );
+      Navigator.pop(
+        context,
+        true,
+      );
+    }
   }
 
   Future<void> _updateTransaction() async {
@@ -78,15 +94,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               user.id,
             );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transação atualizada com sucesso!')),
-          );
-          Navigator.pop(
-            context,
-            true,
-          );
-        }
+        _adManager.showAd(onAdDismissed: _onAdClosedAndNavigate);
       } on PostgrestException catch (e) {
         print('Erro ao atualizar transação no Supabase: ${e.message}');
         if (mounted) {
@@ -316,8 +324,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       child: const Text('Salvar Alterações'),
                     ),
                   ),
-                  const SizedBox(height: 20), // Espaçamento entre o botão e o banner
-                  const Center(child: AdBanner()), // Adicionado o banner aqui
+                  const SizedBox(height: 20),
+                  const Center(child: AdBanner()),
                 ],
               ),
             ),

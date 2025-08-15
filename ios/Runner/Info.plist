@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CADAppID</key>
+    <string>ca-app-pub-3648508587330827~6060551789</string>
 </dict>
 </plist>

@@ -11,6 +11,7 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira_backup/transaction_detail_screen.dart';
 import 'package:saas_gestao_financeira_backup/ad_banner.dart';
+import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -35,10 +36,13 @@ class _HomePageState extends State<HomePage> {
 
   bool _isSortedAscending = false;
 
+  final AdInterstitial _adManager = AdInterstitial();
+
   @override
   void initState() {
     super.initState();
     _initializeData();
+    _adManager.loadAd();
   }
 
   Future<void> _initializeData() async {
@@ -285,6 +289,51 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _generateAndPrintReport() async {
+    if (_transactions.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não há transações para gerar o relatório.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      final pdfBytes =
+          await PdfReportGenerator.generateTransactionReport(
+        _transactions,
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdfBytes,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Relatório PDF gerado com sucesso!',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erro ao gerar relatório PDF: $e',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -366,10 +415,9 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Adicionando o banner de publicidade no topo da coluna
                         const Center (child:AdBanner()), 
                         const SizedBox(height: 16,),
-                       Center(
+                        Center(
                           child: Text(
                             'Que bom te ver por aqui, ${_userName ?? '[username]'}!',
                             textAlign: TextAlign.center,
@@ -397,49 +445,11 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 16),
                         Center(
                           child: ElevatedButton(
-                            onPressed: () async {
-                              if (_transactions.isEmpty) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Não há transações para gerar o relatório.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return;
-                              }
-                              try {
-                                final pdfBytes =
-                                    await PdfReportGenerator.generateTransactionReport(
-                                  _transactions,
-                                );
-
-                                await Printing.layoutPdf(
-                                  onLayout: (PdfPageFormat format) async =>
-                                      pdfBytes,
-                                );
-
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Relatório PDF gerado com sucesso!',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Erro ao gerar relatório PDF: $e',
-                                      ),
-                                    ),
-                                  );
-                                }
+                            onPressed: () {
+                              if (_adManager.isAdLoaded) {
+                                _adManager.showAd(onAdDismissed: _generateAndPrintReport);
+                              } else {
+                                _generateAndPrintReport();
                               }
                             },
                             style: ElevatedButton.styleFrom(

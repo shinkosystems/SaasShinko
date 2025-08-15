@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:saas_gestao_financeira_backup/ad_banner.dart';
+import 'package:saas_gestao_financeira_backup/ad_interstitial.dart'; // Importe o arquivo do AdInterstitial
 
 final supabase = Supabase.instance.client;
 
@@ -33,9 +34,12 @@ class _UserPageState extends State<UserPage> {
 
   final GlobalKey<FormState> _passwordFormKey = GlobalKey<FormState>();
 
+  final AdInterstitial _adManager = AdInterstitial(); // Adiciona esta linha
+
   @override
   void initState() {
     super.initState();
+    _adManager.loadAd(); // Adiciona esta linha
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _getProfile();
     });
@@ -117,7 +121,7 @@ class _UserPageState extends State<UserPage> {
             const SnackBar(content: Text('Crie seu perfil inicial.')),
           );
           print(
-            'DEBUG: Perfil não encontrado (PGRST116). _isLoading = false.',
+              'DEBUG: Perfil não encontrado (PGRST116). _isLoading = false.',
           ); // DEBUG
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -130,7 +134,7 @@ class _UserPageState extends State<UserPage> {
             _userEmail = '';
           });
           print(
-            'DEBUG: Erro Postgrest ao carregar perfil: ${e.message}. _isLoading = false.',
+              'DEBUG: Erro Postgrest ao carregar perfil: ${e.message}. _isLoading = false.',
           ); // DEBUG
         }
       }
@@ -146,7 +150,7 @@ class _UserPageState extends State<UserPage> {
           _userEmail = '';
         });
         print(
-          'DEBUG: Erro inesperado ao carregar perfil: $e. _isLoading = false.',
+            'DEBUG: Erro inesperado ao carregar perfil: $e. _isLoading = false.',
         ); // DEBUG
       }
     }
@@ -221,7 +225,7 @@ class _UserPageState extends State<UserPage> {
           const SnackBar(content: Text('Foto de perfil atualizada!')),
         );
         print(
-          'DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl',
+            'DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl',
         ); // DEBUG
       }
     } on StorageException catch (e) {
@@ -233,7 +237,7 @@ class _UserPageState extends State<UserPage> {
           _isLoading = false;
         });
         print(
-          'DEBUG: Erro StorageException ao fazer upload: ${e.message}',
+            'DEBUG: Erro StorageException ao fazer upload: ${e.message}',
         ); // DEBUG
       }
     } catch (e) {
@@ -250,6 +254,7 @@ class _UserPageState extends State<UserPage> {
   }
 
   void _changePassword() {
+    _adManager.showAd(); // Adiciona esta linha
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -414,7 +419,6 @@ class _UserPageState extends State<UserPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 20),
                       GestureDetector(
                         onTap: _pickAndUploadImage,
                         child: CircleAvatar(
@@ -427,7 +431,7 @@ class _UserPageState extends State<UserPage> {
                                           .from('avatars')
                                           .getPublicUrl(_avatarUrl!);
                                       print(
-                                        'DEBUG: Tentando carregar imagem da URL: $imageUrl',
+                                          'DEBUG: Tentando carregar imagem da URL: $imageUrl',
                                       );
                                       return NetworkImage(imageUrl)
                                           as ImageProvider<Object>?;

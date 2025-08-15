@@ -1,8 +1,9 @@
+// financial_form_widget.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Importação necessária para formatar a data
+import 'package:intl/intl.dart';
+import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
 
 class FinancialFormWidget extends StatefulWidget {
-  // ATUALIZADO: O callback onSave agora também recebe a data
   final Function(double value, String description, DateTime date) onSave;
   final String formTitle;
   final String buttonText;
@@ -23,9 +24,17 @@ class FinancialFormWidget extends StatefulWidget {
 class _FinancialFormWidgetState extends State<FinancialFormWidget> {
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  
-  // NOVO: Adiciona uma variável de estado para armazenar a data, com valor inicial do dia atual
   DateTime _selectedDate = DateTime.now();
+  
+  // Adiciona uma instância da classe AdInterstitial
+  final AdInterstitial _adManager = AdInterstitial();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pré-carrega o anúncio quando o widget é inicializado
+    _adManager.loadAd();
+  }
 
   @override
   void dispose() {
@@ -34,7 +43,6 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
     super.dispose();
   }
 
-  // NOVO: Método para exibir o seletor de data
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -64,7 +72,10 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
       return;
     }
 
-    // ATUALIZADO: Passa a data selecionada no callback
+    // Chama o anúncio intersticial.
+    _adManager.showAd();
+
+    // A lógica de salvar a transação permanece a mesma.
     widget.onSave(value, description, _selectedDate);
 
     // Opcional: Limpar os campos após salvar e resetar a data para hoje
@@ -96,7 +107,6 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             textAlign: TextAlign.center,
           ),
           const Divider(),
-
           const SizedBox(height: 20),
           TextField(
             controller: _valueController,
@@ -110,7 +120,6 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
               hintText: 'Ex: 1500.00',
             ),
           ),
-
           const SizedBox(height: 20),
           TextField(
             controller: _descriptionController,
@@ -123,8 +132,6 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             ),
             maxLines: 2,
           ),
-
-          // NOVO: Adiciona um seletor de data
           const SizedBox(height: 20),
           ListTile(
             title: const Text('Data da Transação'),
@@ -132,7 +139,6 @@ class _FinancialFormWidgetState extends State<FinancialFormWidget> {
             trailing: const Icon(Icons.calendar_today),
             onTap: () => _selectDate(context),
           ),
-
           const SizedBox(height: 30),
           SizedBox(
             width: double.infinity,

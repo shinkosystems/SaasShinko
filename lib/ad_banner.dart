@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
@@ -15,10 +16,14 @@ class _AdBannerState extends State<AdBanner> {
   late BannerAd _ad;
   bool _isLoaded = false;
   
-  final String _adUnitId = kDebugMode
-      ? 'ca-app-pub-3940256099942544/6300978111' // ID de teste do AdMob
-      : 'ca-app-pub-3648508587330827/7781947128'; // Substitua pelo seu ID de produção
-
+  final String _adUnitId = kDebugMode//Verifica se o app está rodando em modo DEBUG ou não.
+      ? Platform.isAndroid //Se for DEBUG, entra nesse IF/ELSE
+          ? 'ca-app-pub-3940256099942544/6300978111' // Teste Android
+          : 'ca-app-pub-3940256099942544/2934735716' // Teste iOS
+      : Platform.isAndroid //Se não for DEBUG, entra nesse IF/ELSE
+          ? 'ca-app-pub-3648508587330827/7781947128' // Seu ID de produção Android
+          : 'ca-app-pub-3648508587330827/6806974478'; // Substitua pelo seu ID de produção iOS
+          
   @override
   void initState() {
     super.initState();

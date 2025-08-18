@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
         final nextDay = endDate.add(const Duration(days: 1));
         query = query.lt('date', nextDay.toIso8601String());
       }
-      
+
       final response = await query.order('date', ascending: _isSortedAscending);
 
       if (mounted) {
@@ -133,7 +133,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  
+
   void _toggleSortOrder() {
     setState(() {
       _isSortedAscending = !_isSortedAscending;
@@ -157,7 +157,9 @@ class _HomePageState extends State<HomePage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('A data inicial não pode ser depois da data final.'),
+                content: Text(
+                  'A data inicial não pode ser depois da data final.',
+                ),
               ),
             );
           }
@@ -171,7 +173,9 @@ class _HomePageState extends State<HomePage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('A data final não pode ser antes da data inicial.'),
+                content: Text(
+                  'A data final não pode ser antes da data inicial.',
+                ),
               ),
             );
           }
@@ -197,39 +201,39 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-      if (value == true) {
-        _fetchTransactions(startDate: _startDate, endDate: _endDate);
-      }
-    });
+          if (value == true) {
+            _fetchTransactions(startDate: _startDate, endDate: _endDate);
+          }
+        });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-      if (value == true) {
-        _fetchTransactions(startDate: _startDate, endDate: _endDate);
-      }
-    });
+          if (value == true) {
+            _fetchTransactions(startDate: _startDate, endDate: _endDate);
+          }
+        });
   }
 
   void _editTransaction(Transaction transaction) {
     Navigator.of(context)
         .push(
-      MaterialPageRoute(
-        builder: (context) =>
-            TransactionDetailScreen(transaction: transaction),
-      ),
-    )
+          MaterialPageRoute(
+            builder: (context) =>
+                TransactionDetailScreen(transaction: transaction),
+          ),
+        )
         .then((shouldRefresh) {
-      if (shouldRefresh == true) {
-        _fetchTransactions(startDate: _startDate, endDate: _endDate);
-      } else {
-        setState(() {
-          // Apenas redesenha a tela para que o Dismissible seja desfeito
+          if (shouldRefresh == true) {
+            _fetchTransactions(startDate: _startDate, endDate: _endDate);
+          } else {
+            setState(() {
+              // Apenas redesenha a tela para que o Dismissible seja desfeito
+            });
+          }
         });
-      }
-    });
   }
 
   String _formatCurrency(double amount) {
@@ -294,17 +298,14 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Não há transações para gerar o relatório.',
-            ),
+            content: Text('Não há transações para gerar o relatório.'),
           ),
         );
       }
       return;
     }
     try {
-      final pdfBytes =
-          await PdfReportGenerator.generateTransactionReport(
+      final pdfBytes = await PdfReportGenerator.generateTransactionReport(
         _transactions,
       );
 
@@ -314,21 +315,13 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Relatório PDF gerado com sucesso!',
-            ),
-          ),
+          const SnackBar(content: Text('Relatório PDF gerado com sucesso!')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erro ao gerar relatório PDF: $e',
-            ),
-          ),
+          SnackBar(content: Text('Erro ao gerar relatório PDF: $e')),
         );
       }
     }
@@ -415,8 +408,8 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Center (child:AdBanner()), 
-                        const SizedBox(height: 16,),
+                        const Center(child: AdBanner()),
+                        const SizedBox(height: 16),
                         Center(
                           child: Text(
                             'Que bom te ver por aqui, ${_userName ?? '[username]'}!',
@@ -447,14 +440,21 @@ class _HomePageState extends State<HomePage> {
                           child: ElevatedButton(
                             onPressed: () {
                               if (_adManager.isAdLoaded) {
-                                _adManager.showAd(onAdDismissed: _generateAndPrintReport);
+                                _adManager.showAd(
+                                  onAdDismissed: _generateAndPrintReport,
+                                );
                               } else {
                                 _generateAndPrintReport();
                               }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF8BD9BC),
-                              foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                              foregroundColor: const Color.fromARGB(
+                                255,
+                                0,
+                                0,
+                                0,
+                              ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                                 vertical: 12,
@@ -502,18 +502,18 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         const Divider(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Período:',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 2),
                             TextButton.icon(
                               onPressed: () =>
                                   _selectDate(context, isStartDate: true),
@@ -521,7 +521,9 @@ class _HomePageState extends State<HomePage> {
                               label: Text(
                                 _startDate == null
                                     ? 'Data Inicial'
-                                    : DateFormat('dd/MM/yyyy').format(_startDate!),
+                                    : DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(_startDate!),
                               ),
                             ),
                             TextButton.icon(
@@ -531,10 +533,12 @@ class _HomePageState extends State<HomePage> {
                               label: Text(
                                 _endDate == null
                                     ? 'Data Final'
-                                    : DateFormat('dd/MM/yyyy').format(_endDate!),
+                                    : DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(_endDate!),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 2),
                             IconButton(
                               icon: const Icon(
                                 Icons.delete_sweep_outlined,

@@ -244,20 +244,20 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddIncomeScreen()))
         .then((value) {
-          if (value == true) {
-            _fetchTransactions(startDate: _startDate, endDate: _endDate);
-          }
-        });
+      if (value == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      }
+    });
   }
 
   void _addExpense() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const AddExpenseScreen()))
         .then((value) {
-          if (value == true) {
-            _fetchTransactions(startDate: _startDate, endDate: _endDate);
-          }
-        });
+      if (value == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      }
+    });
   }
 
   void _editTransaction(Transaction transaction) {
@@ -269,14 +269,14 @@ class _HomePageState extends State<HomePage> {
           ),
         )
         .then((shouldRefresh) {
-          if (shouldRefresh == true) {
-            _fetchTransactions(startDate: _startDate, endDate: _endDate);
-          } else {
-            setState(() {
-              // Apenas redesenha a tela para que o Dismissible seja desfeito
-            });
-          }
+      if (shouldRefresh == true) {
+        _fetchTransactions(startDate: _startDate, endDate: _endDate);
+      } else {
+        setState(() {
+          // Apenas redesenha a tela para que o Dismissible seja desfeito
         });
+      }
+    });
   }
 
   String _formatCurrency(double amount) {
@@ -352,6 +352,7 @@ class _HomePageState extends State<HomePage> {
         _transactions,
       );
 
+      // Apenas exibe o PDF para visualização
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdfBytes,
       );

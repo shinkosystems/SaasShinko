@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
+import 'package:flutter_html/flutter_html.dart';
 
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
@@ -14,9 +15,8 @@ class _AdBannerState extends State<AdBanner> {
   late BannerAd _ad;
   bool _isLoaded = false;
   
-  // A verificação de plataforma deve ser feita aqui, na inicialização
   final String _adUnitId = kIsWeb
-      ? '' // Vazio para a web
+      ? '' 
       : kDebugMode
           ? Platform.isAndroid
               ? 'ca-app-pub-3940256099942544/6300978111'
@@ -25,10 +25,21 @@ class _AdBannerState extends State<AdBanner> {
               ? 'ca-app-pub-3648508587330827/7781947128'
               : 'ca-app-pub-3648508587330827/6806974478';
             
+  final String _adSenseCode = '''
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3648508587330827"
+         data-ad-slot="SEU_AD_SLOT_ID_AQUI"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  ''';
+            
   @override
   void initState() {
     super.initState();
-    // A chamada _loadAd() deve ser condicional
     if (!kIsWeb) {
       _loadAd();
     }
@@ -57,7 +68,7 @@ class _AdBannerState extends State<AdBanner> {
 
   @override
   void dispose() {
-    if (_isLoaded) { // Dispor o anúncio apenas se ele foi carregado
+    if (_isLoaded) { 
         _ad.dispose();
     }
     super.dispose();
@@ -65,7 +76,11 @@ class _AdBannerState extends State<AdBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (!kIsWeb && _isLoaded) { // Renderizar o anúncio apenas se não for web e se estiver carregado
+    if (kIsWeb) {
+      return Html(
+        data: _adSenseCode,
+      );
+    } else if (_isLoaded) { 
       return SizedBox(
         width: _ad.size.width.toDouble(),
         height: _ad.size.height.toDouble(),

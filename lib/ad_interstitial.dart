@@ -19,7 +19,6 @@ class AdInterstitial {
               : 'ca-app-pub-3648508587330827/6806974478';
 
   void loadAd() {
-    // A chamada _loadAd() deve ser condicional
     if (!kIsWeb && !_isAdLoaded) {
       InterstitialAd.load(
         adUnitId: _adUnitId,

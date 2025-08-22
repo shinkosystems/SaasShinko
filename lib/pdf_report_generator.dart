@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:saas_gestao_financeira/models/transaction_model.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 // Classe que gera o PDF
 class PdfReportGenerator {
@@ -11,7 +12,10 @@ class PdfReportGenerator {
   ) async {
     final pdf = pw.Document();
 
-    // 1. Calcular totais gerais para o resumo no início do relatório
+    // 1. Carregar a imagem do asset
+    final logoImage = await _loadAssetImage('assets/logopdf.png');
+
+    // 2. Calcular totais gerais para o resumo no início do relatório
     final double totalIncome = transactions
         .where((t) => t.type == TransactionType.income)
         .fold(0.0, (sum, item) => sum + item.value);
@@ -24,7 +28,7 @@ class PdfReportGenerator {
     final currencyFormatter =
         NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-    // 2. Agrupar transações por mês e ano
+    // 3. Agrupar transações por mês e ano
     final Map<String, List<Transaction>> groupedByMonth = {};
     // ALTERAÇÃO AQUI: Ordenar as transações da mais recente para a mais antiga
     transactions.sort((a, b) => b.date.compareTo(a.date));
@@ -42,18 +46,29 @@ class PdfReportGenerator {
         build: (pw.Context context) {
           final List<pw.Widget> pageContent = [];
 
-          // Adicionar o cabeçalho e o resumo geral (como já existiam)
+          // Adicionar a logo e o título na mesma linha
           pageContent.add(
-            pw.Center(
-              child: pw.Text(
-                'Relatório de Transações',
-                style: pw.TextStyle(
-                  fontSize: 24,
-                  fontWeight: pw.FontWeight.bold,
+            pw.Row(
+              children: [
+                pw.Image(
+                  pw.MemoryImage(logoImage),
+                  width: 100, // Ajuste o tamanho da logo conforme a necessidade
                 ),
-              ),
+                pw.Expanded(
+                  child: pw.Center(
+                    child: pw.Text(
+                      'Relatório de Transações',
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
+          
           pageContent.add(pw.SizedBox(height: 20));
           pageContent.add(pw.Divider());
           pageContent.add(
@@ -116,14 +131,13 @@ class PdfReportGenerator {
                     ),
                   ],
                 ),
-                
               ],
             ),
           );
           pageContent.add(pw.SizedBox(height: 20));
           pageContent.add(pw.Divider());
           
-          // 3. Iterar sobre os grupos de meses e gerar uma tabela para cada um
+          // 4. Iterar sobre os grupos de meses e gerar uma tabela para cada um
           groupedByMonth.forEach((monthYear, monthlyTransactions) {
             // Calcular resumo mensal
             final double monthlyIncome = monthlyTransactions
@@ -143,8 +157,8 @@ class PdfReportGenerator {
                     style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
                   ),
                   pw.SizedBox(height: 8),
-                   // Resumo mensal
-                   pw.Row(
+                    // Resumo mensal
+                    pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('Saldo do mês:'),
@@ -157,8 +171,8 @@ class PdfReportGenerator {
                           ),
                         ),
                       ],
-                   ),
-                   pw.Row(
+                    ),
+                    pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('Receitas do mês:'),
@@ -167,8 +181,8 @@ class PdfReportGenerator {
                           style: pw.TextStyle(color: PdfColors.green),
                         ),
                       ],
-                   ),
-                   pw.Row(
+                    ),
+                    pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text('Despesas do mês:'),
@@ -177,9 +191,9 @@ class PdfReportGenerator {
                           style: pw.TextStyle(color: PdfColors.red),
                         ),
                       ],
-                   ),
-                   pw.SizedBox(height: 10),
-                   pw.Divider(),
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Divider(),
                 ],
               ),
             );
@@ -215,5 +229,11 @@ class PdfReportGenerator {
     );
 
     return pdf.save();
+  }
+
+  // Função auxiliar para carregar a imagem do asset
+  static Future<Uint8List> _loadAssetImage(String assetPath) async {
+    final ByteData data = await rootBundle.load(assetPath);
+    return data.buffer.asUint8List();
   }
 }

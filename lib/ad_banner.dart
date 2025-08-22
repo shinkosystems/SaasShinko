@@ -1,9 +1,7 @@
-// ad_banner.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
+import 'dart:io' show Platform;
 
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
@@ -16,18 +14,24 @@ class _AdBannerState extends State<AdBanner> {
   late BannerAd _ad;
   bool _isLoaded = false;
   
-  final String _adUnitId = kDebugMode//Verifica se o app está rodando em modo DEBUG ou não.
-      ? Platform.isAndroid //Se for DEBUG, entra nesse IF/ELSE
-          ? 'ca-app-pub-3940256099942544/6300978111' // Teste Android
-          : 'ca-app-pub-3940256099942544/2934735716' // Teste iOS
-      : Platform.isAndroid //Se não for DEBUG, entra nesse IF/ELSE
-          ? 'ca-app-pub-3648508587330827/7781947128' // Seu ID de produção Android
-          : 'ca-app-pub-3648508587330827/6806974478'; // Substitua pelo seu ID de produção iOS
-          
+  // A verificação de plataforma deve ser feita aqui, na inicialização
+  final String _adUnitId = kIsWeb
+      ? '' // Vazio para a web
+      : kDebugMode
+          ? Platform.isAndroid
+              ? 'ca-app-pub-3940256099942544/6300978111'
+              : 'ca-app-pub-3940256099942544/2934735716'
+          : Platform.isAndroid
+              ? 'ca-app-pub-3648508587330827/7781947128'
+              : 'ca-app-pub-3648508587330827/6806974478';
+            
   @override
   void initState() {
     super.initState();
-    _loadAd();
+    // A chamada _loadAd() deve ser condicional
+    if (!kIsWeb) {
+      _loadAd();
+    }
   }
 
   void _loadAd() {
@@ -53,13 +57,15 @@ class _AdBannerState extends State<AdBanner> {
 
   @override
   void dispose() {
-    _ad.dispose();
+    if (_isLoaded) { // Dispor o anúncio apenas se ele foi carregado
+        _ad.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoaded) {
+    if (!kIsWeb && _isLoaded) { // Renderizar o anúncio apenas se não for web e se estiver carregado
       return SizedBox(
         width: _ad.size.width.toDouble(),
         height: _ad.size.height.toDouble(),

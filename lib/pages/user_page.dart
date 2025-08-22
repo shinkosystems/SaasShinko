@@ -1,10 +1,12 @@
+//user_page.dart
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:saas_gestao_financeira_backup/ad_banner.dart';
-import 'package:saas_gestao_financeira_backup/ad_interstitial.dart'; // Importe o arquivo do AdInterstitial
+import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
+import 'package:saas_gestao_financeira_backup/pages/notification_page.dart'; // [MODIFICAÇÃO] Importação da nova página
 
 final supabase = Supabase.instance.client;
 
@@ -20,6 +22,7 @@ class _UserPageState extends State<UserPage> {
   String _userEmail = 'Carregando...';
   File? _profileImage;
   String? _avatarUrl;
+  bool _isAdmin = false; // [MODIFICAÇÃO] Nova variável para verificar se o usuário é admin.
 
   bool _isLoading = true;
   String? _userId;
@@ -34,12 +37,12 @@ class _UserPageState extends State<UserPage> {
 
   final GlobalKey<FormState> _passwordFormKey = GlobalKey<FormState>();
 
-  final AdInterstitial _adManager = AdInterstitial(); // Adiciona esta linha
+  final AdInterstitial _adManager = AdInterstitial();
 
   @override
   void initState() {
     super.initState();
-    _adManager.loadAd(); // Adiciona esta linha
+    _adManager.loadAd();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _getProfile();
     });
@@ -82,15 +85,15 @@ class _UserPageState extends State<UserPage> {
           _userName = 'Usuário não logado';
           _userEmail = '';
         });
-        print('DEBUG: Usuário não logado. _isLoading = false.'); // DEBUG
+        print('DEBUG: Usuário não logado. _isLoading = false.');
         return;
       }
 
-      print('DEBUG: userId encontrado: $_userId'); // DEBUG
+      print('DEBUG: userId encontrado: $_userId');
 
       final response = await supabase
           .from('profiles')
-          .select('username, email, avatar_url')
+          .select('username, email, avatar_url, is_admin') // [MODIFICAÇÃO] Adiciona 'is_admin' na busca.
           .eq('id', _userId!)
           .single();
 
@@ -99,13 +102,15 @@ class _UserPageState extends State<UserPage> {
           _userName = response['username'] as String? ?? 'Nome não definido';
           _userEmail = response['email'] as String? ?? 'Email não definido';
           _avatarUrl = response['avatar_url'] as String?;
+          _isAdmin = response['is_admin'] as bool? ?? false; // [MODIFICAÇÃO] Seta o valor de _isAdmin.
           _isLoading = false;
           _profileLoaded = true;
         });
-        print('DEBUG: Perfil carregado com sucesso!'); // DEBUG
-        print('DEBUG: _userName: $_userName'); // DEBUG
-        print('DEBUG: _userEmail: $_userEmail'); // DEBUG
-        print('DEBUG: _avatarUrl no _getProfile: $_avatarUrl'); // DEBUG
+        print('DEBUG: Perfil carregado com sucesso!');
+        print('DEBUG: _userName: $_userName');
+        print('DEBUG: _userEmail: $_userEmail');
+        print('DEBUG: _avatarUrl no _getProfile: $_avatarUrl');
+        print('DEBUG: is_admin: $_isAdmin'); // [MODIFICAÇÃO] Loga o status de admin.
       }
     } on PostgrestException catch (e) {
       if (mounted) {
@@ -122,20 +127,20 @@ class _UserPageState extends State<UserPage> {
           );
           print(
               'DEBUG: Perfil não encontrado (PGRST116). _isLoading = false.',
-          ); // DEBUG
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro ao carregar perfil: ${e.message}')),
           );
           setState(() {
             _isLoading = false;
-            _profileLoaded = true; // Marca como carregado mesmo com erro
+            _profileLoaded = true;
             _userName = 'Erro ao carregar';
             _userEmail = '';
           });
           print(
               'DEBUG: Erro Postgrest ao carregar perfil: ${e.message}. _isLoading = false.',
-          ); // DEBUG
+          );
         }
       }
     } catch (e) {
@@ -145,13 +150,13 @@ class _UserPageState extends State<UserPage> {
         );
         setState(() {
           _isLoading = false;
-          _profileLoaded = true; // Marca como carregado mesmo com erro
+          _profileLoaded = true;
           _userName = 'Erro inesperado';
           _userEmail = '';
         });
         print(
             'DEBUG: Erro inesperado ao carregar perfil: $e. _isLoading = false.',
-        ); // DEBUG
+        );
       }
     }
   }
@@ -184,24 +189,24 @@ class _UserPageState extends State<UserPage> {
     final String fileName =
         '${_userId!}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
     final String storagePath =
-        'avatars/$fileName'; // 'avatars' é o bucket no Supabase Storage
+        'avatars/$fileName';
 
     setState(() {
-      _isLoading = true; // Mostra carregamento ao fazer upload
+      _isLoading = true;
     });
 
-    print('DEBUG: Tentando fazer upload para o path: $storagePath'); // DEBUG
+    print('DEBUG: Tentando fazer upload para o path: $storagePath');
 
     try {
       await supabase.storage
           .from('avatars')
           .uploadBinary(
             storagePath,
-            bytes, // Use os bytes do arquivo aqui
+            bytes,
             fileOptions: const FileOptions(
-              cacheControl: '3600', // Cache por 1 hora
+              cacheControl: '3600',
               upsert:
-                  true, // Se já existir um arquivo com o mesmo nome, substitui
+                  true,
             ),
           );
 
@@ -209,15 +214,15 @@ class _UserPageState extends State<UserPage> {
           .from('profiles')
           .update({
             'avatar_url':
-                storagePath, // Salve o caminho no storage, não o public URL completo
+                storagePath,
             'updated_at': DateTime.now()
-                .toIso8601String(), // Atualiza o timestamp
+                .toIso8601String(),
           })
           .eq('id', _userId!);
 
       if (mounted) {
         setState(() {
-          _profileImage = null; // Limpe a imagem local para carregar da URL
+          _profileImage = null;
           _avatarUrl = storagePath;
           _isLoading = false;
         });
@@ -226,7 +231,7 @@ class _UserPageState extends State<UserPage> {
         );
         print(
             'DEBUG: Upload e atualização do perfil concluídos. Novo _avatarUrl: $_avatarUrl',
-        ); // DEBUG
+        );
       }
     } on StorageException catch (e) {
       if (mounted) {
@@ -238,7 +243,7 @@ class _UserPageState extends State<UserPage> {
         });
         print(
             'DEBUG: Erro StorageException ao fazer upload: ${e.message}',
-        ); // DEBUG
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -248,13 +253,13 @@ class _UserPageState extends State<UserPage> {
         setState(() {
           _isLoading = false;
         });
-        print('DEBUG: Erro inesperado ao fazer upload da foto: $e'); // DEBUG
+        print('DEBUG: Erro inesperado ao fazer upload da foto: $e');
       }
     }
   }
 
   void _changePassword() {
-    _adManager.showAd(); // Adiciona esta linha
+    _adManager.showAd();
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -271,7 +276,7 @@ class _UserPageState extends State<UserPage> {
                   decoration: InputDecoration(
                     labelText: 'Senha Atual',
                     border: UnderlineInputBorder(
-                      borderRadius: BorderRadius.circular(16), // AQUI
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   validator: (value) {
@@ -288,7 +293,7 @@ class _UserPageState extends State<UserPage> {
                   decoration: InputDecoration(
                     labelText: 'Nova Senha',
                     border: UnderlineInputBorder(
-                      borderRadius: BorderRadius.circular(16), // AQUI
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   validator: (value) {
@@ -308,7 +313,7 @@ class _UserPageState extends State<UserPage> {
                   decoration: InputDecoration(
                     labelText: 'Confirme a Nova Senha',
                     border: UnderlineInputBorder(
-                      borderRadius: BorderRadius.circular(16), // AQUI
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   validator: (value) {
@@ -390,7 +395,7 @@ class _UserPageState extends State<UserPage> {
               child: const Text('Confirmar'),
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16), // AQUI
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
             ),
@@ -481,10 +486,35 @@ class _UserPageState extends State<UserPage> {
                             vertical: 12,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16), // AQUI
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      // [MODIFICAÇÃO] Adiciona o botão "Notificações" se o usuário for admin.
+                      if (_isAdmin)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => NotificationPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.notifications_active),
+                          label: const Text('Notificações'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8BD9BC),
+                            foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 20),
                       const Center(child: AdBanner()),
                     ],

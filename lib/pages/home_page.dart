@@ -12,6 +12,9 @@ import 'package:pdf/pdf.dart';
 import 'package:saas_gestao_financeira_backup/transaction_detail_screen.dart';
 import 'package:saas_gestao_financeira_backup/ad_banner.dart';
 import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:saas_gestao_financeira_backup/models/notification_model.dart';
+import 'package:saas_gestao_financeira_backup/custom_notification_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -38,11 +41,16 @@ class _HomePageState extends State<HomePage> {
 
   final AdInterstitial _adManager = AdInterstitial();
 
+  bool _notificationLoaded = false;
+
   @override
   void initState() {
     super.initState();
-    _initializeData();
     _adManager.loadAd();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+      _fetchNotification();
+    });
   }
 
   Future<void> _initializeData() async {
@@ -56,6 +64,41 @@ class _HomePageState extends State<HomePage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _fetchNotification() async {
+    if (_notificationLoaded) return;
+
+    try {
+      final response = await supabase
+          .from('notifications')
+          .select('titulo, corpo')
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response != null) {
+        final notification = NotificationModel.fromJson(response);
+        if (mounted) {
+          _showNotificationDialog(notification);
+          _notificationLoaded = true;
+        }
+      }
+    } catch (e) {
+      print('Erro ao buscar notificação: $e');
+    }
+  }
+
+  void _showNotificationDialog(NotificationModel notification) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CustomNotificationDialog(
+          title: notification.title,
+          content: notification.content,
+        );
+      },
+    );
   }
 
   Future<void> _fetchUserName() async {

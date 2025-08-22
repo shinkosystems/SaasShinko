@@ -1,239 +1,143 @@
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:intl/intl.dart';
 import 'package:saas_gestao_financeira/models/transaction_model.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:intl/intl.dart';
 
-// Classe que gera o PDF
 class PdfReportGenerator {
   static Future<Uint8List> generateTransactionReport(
     List<Transaction> transactions,
   ) async {
     final pdf = pw.Document();
 
-    // 1. Carregar a imagem do asset
-    final logoImage = await _loadAssetImage('assets/logologin.png');
-
-    // 2. Calcular totais gerais para o resumo no início do relatório
-    final double totalIncome = transactions
-        .where((t) => t.type == TransactionType.income)
-        .fold(0.0, (sum, item) => sum + item.value);
-    final double totalExpense = transactions
-        .where((t) => t.type == TransactionType.expense)
-        .fold(0.0, (sum, item) => sum + item.value);
-    final double currentBalance = totalIncome - totalExpense;
-
-    // Formatter para moeda
-    final currencyFormatter =
-        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
-    // 3. Agrupar transações por mês e ano
-    final Map<String, List<Transaction>> groupedByMonth = {};
-    // ALTERAÇÃO AQUI: Ordenar as transações da mais recente para a mais antiga
-    transactions.sort((a, b) => b.date.compareTo(a.date));
-    for (var t in transactions) {
-      final monthYear = DateFormat('MMMM yyyy', 'pt_BR').format(t.date);
-      if (!groupedByMonth.containsKey(monthYear)) {
-        groupedByMonth[monthYear] = [];
-      }
-      groupedByMonth[monthYear]!.add(t);
-    }
+    // Carrega a imagem da logo como bytes para funcionar em todas as plataformas
+    final logoBytes = await rootBundle.load('assets/logocerta.png');
+    final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          final List<pw.Widget> pageContent = [];
-
-          // Adicionar a logo e o título na mesma linha
-          pageContent.add(
-            pw.Row(
-              children: [
-                pw.Image(
-                  pw.MemoryImage(logoImage),
-                  width: 100, // Ajuste o tamanho da logo conforme a necessidade
+        build: (pw.Context context) => [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Image(logo, height: 120),
+              pw.SizedBox(width: 10),
+              pw.Text(
+                'Relatório de Transações',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
                 ),
-                pw.Expanded(
-                  child: pw.Center(
-                    child: pw.Text(
-                      'Relatório de Transações',
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-          
-          pageContent.add(pw.SizedBox(height: 20));
-          pageContent.add(pw.Divider());
-          pageContent.add(
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(
-                  'Data do Relatório: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-                ),
-                pw.Text('Total de Transações: ${transactions.length}'),
-              ],
-            ),
-          );
-          pageContent.add(pw.SizedBox(height: 10));
-          pageContent.add(pw.Divider());
-          pageContent.add(pw.SizedBox(height: 20));
-          pageContent.add(
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'Resumo Financeiro Geral:',
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Saldo Atual:'),
-                    pw.Text(
-                      currencyFormatter.format(currentBalance),
-                      style: pw.TextStyle(
-                        color: currentBalance >= 0
-                            ? PdfColors.blue
-                            : PdfColors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Receitas Totais:'),
-                    pw.Text(
-                      currencyFormatter.format(totalIncome),
-                      style: pw.TextStyle(color: PdfColors.green),
-                    ),
-                  ],
-                ),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Despesas Totais:'),
-                    pw.Text(
-                      currencyFormatter.format(totalExpense),
-                      style: pw.TextStyle(color: PdfColors.red),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-          pageContent.add(pw.SizedBox(height: 20));
-          pageContent.add(pw.Divider());
-          
-          // 4. Iterar sobre os grupos de meses e gerar uma tabela para cada um
-          groupedByMonth.forEach((monthYear, monthlyTransactions) {
-            // Calcular resumo mensal
-            final double monthlyIncome = monthlyTransactions
-                .where((t) => t.type == TransactionType.income)
-                .fold(0.0, (sum, item) => sum + item.value);
-            final double monthlyExpense = monthlyTransactions
-                .where((t) => t.type == TransactionType.expense)
-                .fold(0.0, (sum, item) => sum + item.value);
-            final double monthlyBalance = monthlyIncome - monthlyExpense;
-
-            pageContent.add(
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Transações de ${monthYear[0].toUpperCase()}${monthYear.substring(1)}:', // Capitaliza a primeira letra
-                    style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-                  ),
-                  pw.SizedBox(height: 8),
-                    // Resumo mensal
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('Saldo do mês:'),
-                        pw.Text(
-                          currencyFormatter.format(monthlyBalance),
-                          style: pw.TextStyle(
-                            color: monthlyBalance >= 0
-                                ? PdfColors.blue
-                                : PdfColors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('Receitas do mês:'),
-                        pw.Text(
-                          currencyFormatter.format(monthlyIncome),
-                          style: pw.TextStyle(color: PdfColors.green),
-                        ),
-                      ],
-                    ),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text('Despesas do mês:'),
-                        pw.Text(
-                          currencyFormatter.format(monthlyExpense),
-                          style: pw.TextStyle(color: PdfColors.red),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 10),
-                    pw.Divider(),
-                ],
               ),
-            );
-
-            // Adicionar a tabela para as transações deste mês
-            pageContent.add(
-              pw.Table.fromTextArray(
-                headers: ['Data', 'Descrição', 'Tipo', 'Valor'],
-                data: monthlyTransactions
-                    .map(
-                      (t) => [
-                        DateFormat('dd/MM/yyyy').format(t.date),
-                        t.description,
-                        t.type == TransactionType.income ? 'Receita' : 'Despesa',
-                        currencyFormatter.format(t.value),
-                      ],
-                    )
-                    .toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                border: pw.TableBorder.all(width: 1),
-                cellAlignment: pw.Alignment.centerLeft,
-                cellPadding: const pw.EdgeInsets.all(5),
-              ),
-            );
-            pageContent.add(pw.SizedBox(height: 20)); // Espaço entre as tabelas
-          });
-          
-          pageContent.add(pw.Center(child: pw.Text('*** Fim do Relatório ***')));
-          
-          return pageContent;
-        },
+            ],
+          ),
+          pw.Divider(height: 20),
+          _buildSummary(transactions),
+          pw.SizedBox(height: 20),
+          _buildTransactionTable(transactions),
+        ],
       ),
     );
 
     return pdf.save();
   }
 
-  // Função auxiliar para carregar a imagem do asset
-  static Future<Uint8List> _loadAssetImage(String assetPath) async {
-    final ByteData data = await rootBundle.load(assetPath);
-    return data.buffer.asUint8List();
+  static pw.Widget _buildSummary(List<Transaction> transactions) {
+    double totalIncome = 0;
+    double totalExpense = 0;
+
+    for (var transaction in transactions) {
+      if (transaction.type == TransactionType.income) {
+        totalIncome += transaction.value;
+      } else {
+        totalExpense += transaction.value;
+      }
+    }
+
+    final balance = totalIncome - totalExpense;
+
+    return pw.Container(
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey),
+        borderRadius: pw.BorderRadius.circular(10),
+      ),
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Column(
+        children: [
+          _buildSummaryRow(
+            'Total de Receitas:',
+            totalIncome,
+            PdfColors.green,
+          ),
+          _buildSummaryRow(
+            'Total de Despesas:',
+            totalExpense,
+            PdfColors.red,
+          ),
+          _buildSummaryRow(
+            'Saldo Final:',
+            balance,
+            (balance >= 0) ? PdfColors.blue : PdfColors.red,
+            isBold: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildSummaryRow(
+    String title,
+    double value,
+    PdfColor color, {
+    bool isBold = false,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 5),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+          pw.Text(
+            'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(value)}',
+            style: pw.TextStyle(
+              fontSize: 14,
+              color: color,
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildTransactionTable(List<Transaction> transactions) {
+    final headers = ['Data', 'Descrição', 'Valor', 'Tipo'];
+    final data = transactions.map((t) {
+      return [
+        DateFormat('dd/MM/yyyy').format(t.date),
+        t.description,
+        'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(t.value)}',
+        t.type == TransactionType.income ? 'Receita' : 'Despesa',
+      ];
+    }).toList();
+
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: data,
+      border: pw.TableBorder.all(color: PdfColors.black),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+      headerAlignment: pw.Alignment.center,
+      cellAlignment: pw.Alignment.centerLeft,
+      cellStyle: const pw.TextStyle(fontSize: 10),
+      cellPadding: const pw.EdgeInsets.all(5),
+    );
   }
 }

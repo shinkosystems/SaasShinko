@@ -13,7 +13,7 @@ class PdfReportGenerator {
     final pdf = pw.Document();
 
     // 1. Carregar a imagem do asset
-    final logoImage = await _loadAssetImage('assets/logopdf.png');
+    final logoImage = await _loadAssetImage('assets/logologin.png');
 
     // 2. Calcular totais gerais para o resumo no início do relatório
     final double totalIncome = transactions

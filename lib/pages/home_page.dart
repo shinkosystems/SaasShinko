@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
-import 'package:saas_gestao_financeira_backup/pages/login_page.dart';
-import 'package:saas_gestao_financeira_backup/pages/user_page.dart';
-import 'package:saas_gestao_financeira_backup/add_income_screen.dart';
-import 'package:saas_gestao_financeira_backup/add_expense_screen.dart';
-import 'package:saas_gestao_financeira_backup/pdf_report_generator.dart';
+import 'package:saas_gestao_financeira/models/transaction_model.dart';
+import 'package:saas_gestao_financeira/pages/login_page.dart';
+import 'package:saas_gestao_financeira/pages/user_page.dart';
+import 'package:saas_gestao_financeira/add_income_screen.dart';
+import 'package:saas_gestao_financeira/add_expense_screen.dart';
+import 'package:saas_gestao_financeira/pdf_report_generator.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
-import 'package:saas_gestao_financeira_backup/transaction_detail_screen.dart';
-import 'package:saas_gestao_financeira_backup/ad_banner.dart';
-import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
+import 'package:saas_gestao_financeira/transaction_detail_screen.dart';
+import 'package:saas_gestao_financeira/ad_banner.dart';
+import 'package:saas_gestao_financeira/ad_interstitial.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:saas_gestao_financeira_backup/models/notification_model.dart';
-import 'package:saas_gestao_financeira_backup/custom_notification_dialog.dart';
+import 'package:saas_gestao_financeira/models/notification_model.dart';
+import 'package:saas_gestao_financeira/custom_notification_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);

@@ -1,7 +1,7 @@
 // financial_form_widget.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
+import 'package:saas_gestao_financeira/ad_interstitial.dart';
 
 class FinancialFormWidget extends StatefulWidget {
   final Function(double value, String description, DateTime date) onSave;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:saas_gestao_financeira_backup/financial_form_widget.dart';
+import 'package:saas_gestao_financeira/financial_form_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
-import 'package:saas_gestao_financeira_backup/ad_banner.dart';
+import 'package:saas_gestao_financeira/models/transaction_model.dart';
+import 'package:saas_gestao_financeira/ad_banner.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});

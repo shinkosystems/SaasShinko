@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:saas_gestao_financeira_backup/pages/home_page.dart';
-import 'package:saas_gestao_financeira_backup/pages/login_page.dart';
+import 'package:saas_gestao_financeira/pages/home_page.dart';
+import 'package:saas_gestao_financeira/pages/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';

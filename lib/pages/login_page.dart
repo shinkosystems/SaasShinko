@@ -1,5 +1,5 @@
-import 'package:saas_gestao_financeira_backup/pages/home_page.dart';
-import 'package:saas_gestao_financeira_backup/pages/signup_page.dart';
+import 'package:saas_gestao_financeira/pages/home_page.dart';
+import 'package:saas_gestao_financeira/pages/signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

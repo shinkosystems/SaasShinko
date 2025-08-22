@@ -4,9 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:saas_gestao_financeira_backup/ad_banner.dart';
-import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
-import 'package:saas_gestao_financeira_backup/pages/notification_page.dart'; // [MODIFICAÇÃO] Importação da nova página
+import 'package:saas_gestao_financeira/ad_banner.dart';
+import 'package:saas_gestao_financeira/ad_interstitial.dart';
+import 'package:saas_gestao_financeira/pages/notification_page.dart'; // [MODIFICAÇÃO] Importação da nova página
 
 final supabase = Supabase.instance.client;
 

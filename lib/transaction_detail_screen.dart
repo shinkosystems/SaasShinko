@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:saas_gestao_financeira_backup/models/transaction_model.dart';
-import 'package:saas_gestao_financeira_backup/ad_banner.dart';
-import 'package:saas_gestao_financeira_backup/ad_interstitial.dart';
+import 'package:saas_gestao_financeira/models/transaction_model.dart';
+import 'package:saas_gestao_financeira/ad_banner.dart';
+import 'package:saas_gestao_financeira/ad_interstitial.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;

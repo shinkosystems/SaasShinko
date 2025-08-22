@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:saas_gestao_financeira_backup/pages/home_page.dart';
-import 'package:saas_gestao_financeira_backup/pages/login_page.dart';
+import 'package:saas_gestao_financeira/pages/home_page.dart';
+import 'package:saas_gestao_financeira/pages/login_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);

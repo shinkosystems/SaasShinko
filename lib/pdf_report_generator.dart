@@ -14,30 +14,86 @@ class PdfReportGenerator {
     final logoBytes = await rootBundle.load('assets/logocerta.png');
     final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
 
+    // Agrupa as transações por mês e ano
+    final groupedTransactions = <String, List<Transaction>>{};
+    // Garante que a lista de transações esteja ordenada por data
+    transactions.sort((a, b) => a.date.compareTo(b.date));
+
+    for (var transaction in transactions) {
+      final key = DateFormat('MMMM yyyy', 'pt_BR').format(transaction.date);
+      if (!groupedTransactions.containsKey(key)) {
+        groupedTransactions[key] = [];
+      }
+      groupedTransactions[key]!.add(transaction);
+    }
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) => [
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Image(logo, height: 120),
-              pw.SizedBox(width: 10),
+        build: (pw.Context context) {
+          final List<pw.Widget> content = [];
+
+          // 1. Adiciona o cabeçalho com a logo e o título, cada um em sua própria linha e centralizados
+          content.add(
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.Image(logo, height: 130),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    'Relatório de Transações',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          content.add(pw.Divider(height: 20));
+
+          // 2. Adiciona o resumo GERAL de todas as transações
+          content.add(
+            pw.Text(
+              'Resumo Geral',
+              style: pw.TextStyle(
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          );
+          content.add(pw.SizedBox(height: 10));
+          content.add(_buildSummary(transactions));
+
+          content.add(pw.SizedBox(height: 20));
+          content.add(pw.Divider());
+
+          // 3. Itera sobre os meses e adiciona o resumo e a tabela para cada um
+          groupedTransactions.forEach((month, monthlyTransactions) {
+            content.add(pw.SizedBox(height: 20));
+            content.add(
               pw.Text(
-                'Relatório de Transações',
+                'Mês: $month',
                 style: pw.TextStyle(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-            ],
-          ),
-          pw.Divider(height: 20),
-          _buildSummary(transactions),
-          pw.SizedBox(height: 20),
-          _buildTransactionTable(transactions),
-        ],
+            );
+            content.add(pw.SizedBox(height: 10));
+
+            // Adiciona o resumo do mês específico
+            content.add(_buildSummary(monthlyTransactions));
+            
+            content.add(pw.SizedBox(height: 10));
+            content.add(_buildTransactionTable(monthlyTransactions));
+            content.add(pw.SizedBox(height: 20));
+          });
+
+          return content;
+        },
       ),
     );
 
